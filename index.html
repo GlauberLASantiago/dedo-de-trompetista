@@ -326,8 +326,8 @@
         /* ─── Trumpet Visual — Variáveis de Dimensão ─── */
         :root {
             /* Painel */
-            --scene-h: 345px;
-            --tr-pipe-bottom: 173px;
+            --scene-h: 330px;
+            --tr-pipe-bottom: 150px;
 
             /* Bocal */
             --tr-bocal-len: 93px;
@@ -337,13 +337,13 @@
 
             /* Tubo */
             --tr-pipe-h: 39px;
-            --tr-pipe-w: 393px;
+            --tr-pipe-w: 285px;
             --tr-pipe-x: -149px;
 
             /* Campana */
-            --tr-campana-len: 121px;
-            --tr-campana-wide: 291px;
-            --tr-campana-rim: 4px;
+            --tr-campana-len: 525px;
+            --tr-campana-wide: 300px;
+            --tr-campana-rim: 6px;
             --tr-campana-x: -150px;
             --tr-campana-y: -1px;
 
@@ -365,13 +365,13 @@
         /* ─── Trumpet Valves Panel ─── */
         .valves-panel {
             height: var(--scene-h);
-            max-width: 700px;
+            max-width: 900px;
             margin: 0 auto 8px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
             position: relative;
-            padding-bottom: 40px;
+            padding-bottom: 17px;
             overflow: visible;
         }
 
@@ -403,35 +403,26 @@
             transform: translate(var(--tr-bocal-x), calc(-1 * var(--tr-bocal-y)));
         }
 
-        /* ─── Campana (bell) ─── */
-        .trumpet-campana {
+        /* ─── Campana (bell) SVG ─── */
+        .trumpet-campana-svg {
             position: absolute;
             right: 0;
             width: var(--tr-campana-len);
             height: var(--tr-campana-wide);
             bottom: calc(var(--tr-pipe-bottom) + var(--tr-pipe-h) / 2 - var(--tr-campana-wide) / 2);
-            background: linear-gradient(to bottom, #854d0e 0%, #ca8a04 20%, #fde047 45%, #ca8a04 70%, #854d0e 100%);
-            clip-path: polygon(0 calc(50% - var(--tr-pipe-h) / 2),
-                    100% 0%,
-                    100% 100%,
-                    0 calc(50% + var(--tr-pipe-h) / 2));
-            z-index: 1;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 0;
+            overflow: visible;
             transform: translate(calc(-1 * var(--tr-campana-x)), calc(-1 * var(--tr-campana-y)));
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
         }
 
-        /* Borda elíptica da abertura da campana */
-        .trumpet-campana-rim {
-            position: absolute;
-            right: 0;
-            width: var(--tr-campana-rim);
-            height: var(--tr-campana-wide);
-            bottom: calc(var(--tr-pipe-bottom) + var(--tr-pipe-h) / 2 - var(--tr-campana-wide) / 2);
-            border-radius: 50%;
-            background: radial-gradient(ellipse at 35% center, #2a0e00 0%, #713f12 45%, #a16207 80%);
-            box-shadow: inset 4px 0 10px rgba(0, 0, 0, 0.6), 2px 0 6px rgba(0, 0, 0, 0.4);
-            z-index: 2;
-            transform: translate(calc(-1 * var(--tr-campana-x)), calc(-1 * var(--tr-campana-y)));
+        .bell-path {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .bell-path:hover {
+            filter: brightness(1.1);
         }
 
         .valve-group {
@@ -1075,26 +1066,6 @@
             text-align: right;
             font-variant-numeric: tabular-nums;
         }
-
-        .bt-hint {
-            font-size: 11px;
-            color: var(--text-sub);
-            line-height: 1.4;
-        }
-
-        #btnBluetooth {
-            background-color: #3b82f6;
-            color: #fff;
-        }
-
-        #btnBluetooth:hover {
-            background-color: #2563eb;
-        }
-
-        #btnBluetooth.active {
-            background-color: #1d4ed8 !important;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
     </style>
 </head>
 
@@ -1336,7 +1307,7 @@
                     <select id="instSelect" title="Escolher o som dos instrumentos">
                         <option value="trumpet" selected>Trompete</option>
                         <option value="acoustic_grand_piano">Piano</option>
-                        <option value="violin">Violino</option>
+                        <option value="string_ensemble_1">Cordas</option>
                     </select>
                 </div>
 
@@ -1474,8 +1445,23 @@
                         <!-- Tubo principal -->
                         <div class="trumpet-pipe"></div>
                         <!-- Campana (bell) — direita -->
-                        <div class="trumpet-campana"></div>
-                        <div class="trumpet-campana-rim"></div>
+                        <svg class="trumpet-campana-svg" viewBox="470 320 310 260" xmlns="http://www.w3.org/2000/svg"
+                            preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="bellGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#854d0e" />
+                                    <stop offset="20%" stop-color="#ca8a04" />
+                                    <stop offset="45%" stop-color="#fde047" />
+                                    <stop offset="70%" stop-color="#ca8a04" />
+                                    <stop offset="100%" stop-color="#854d0e" />
+                                </linearGradient>
+                            </defs>
+                            <path class="bell-path"
+                                d="M470,460 L650,460 C750,460 780,550 780,580 L780,320 C780,350 750,440 650,440 L470,440 Z"
+                                fill="url(#bellGrad)" stroke="#713f12" stroke-width="1.5" />
+                            <!-- Detalhe da borda da campânula -->
+                            <path d="M780,320 L780,580" stroke="#713f12" stroke-width="4" fill="none" opacity="0.4" />
+                        </svg>
                         <div class="valve-group">
 
                             <div class="valve-container" id="valve1">
@@ -1544,12 +1530,6 @@
         </div>
     </section>
 
-    <footer class="credits-footer">
-        <strong>Dedo de trompetista</strong> &mdash; Desenvolvido pelo professor <strong>Glauber Santiago</strong>
-        &mdash;
-        DAC/UFSCar<br>
-        <a href="https://servidores.ufscar.br/glauber/" target="_blank">servidores.ufscar.br/glauber/</a> &bull;
-        <a href="https://sites.google.com/view/glauberia" target="_blank">sites.google.com/view/glauberia</a>
     </footer>
 
     <script>
@@ -1586,7 +1566,8 @@
             var scoreClickTimer = null;
             var cursorStepsCache = { bpm: null, xml: null, mode: 3 };
             var totalMeasures = 0, playbackStartOffset = 0;
-            var xmlNoteMap = {}; // Mapa manual de notas extraídas do MusicXML (indexado por partIndex)
+            var xmlNoteMap = {};
+
             var originalXmlBpm = null;
             var currentHymnIndex = 0;
             var soloActive = false;
