@@ -918,23 +918,40 @@
                 justify-content: center;
             }
 
-            /* Painel de pistões na largura total */
+            /* Painel de pistões na largura total com escala para caber no celular */
             .valves-panel {
                 width: 100%;
                 max-width: none !important;
-                padding-bottom: 30px;
-                height: var(--scene-h);
+                padding-bottom: 0;
+                height: 160px; /* Reduzido conforme a escala */
+                transform: scale(0.55);
+                transform-origin: center center;
+                margin: -20px 0; /* Compensa o espaço extra da escala */
             }
 
             .fb-layout-wrap {
                 padding: 0;
-                margin: 0 -12px 10px -12px;
-                /* Compensa o padding da .body */
-                width: calc(100% + 24px);
+                margin: 0 auto 10px;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                overflow: hidden;
             }
 
             .fb-layout-wrap .note-display {
-                margin-left: 5px;
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 5px auto 15px;
+                width: 70px;
+                height: 70px;
+                font-size: 20px;
+            }
+            
+            .fb-layout-wrap .note-display-main {
+                font-size: 30px;
             }
 
             #score {
@@ -2936,6 +2953,18 @@
 
                 // Carregar lista de instrumentos do GitHub
                 loadHymnList();
+
+                // Carregar primeira música por padrão (se não houver uma embutida)
+                if (!EMBEDDED_XML) {
+                    var defaultUrl = 'https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-trompetista/main/Instrumentos-Bb/001_1%C2%AAM_ad.mxl';
+                    document.getElementById('fname').textContent = "Carregando padrão...";
+                    loadFromUrl(defaultUrl, "001_1ªM_ad");
+                    
+                    // Como é da pasta Bb, força afinação Sib
+                    globalTranspose = -2;
+                    if (kSel) kSel.value = "-2";
+                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
+                }
             })();
 
 
