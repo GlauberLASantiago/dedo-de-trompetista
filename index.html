@@ -454,7 +454,8 @@
         /* Classe para componentes que se movem com a pressão (pistão) */
         .valve-moving {
             position: relative;
-            transition: none; /* Instantâneo conforme solicitado anteriormente */
+            transition: none;
+            /* Instantâneo conforme solicitado anteriormente */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -499,7 +500,8 @@
             border-right: 1px solid #475569;
             position: relative;
             z-index: 1;
-            margin-bottom: -5px; /* Puxa o casing para cima do stem */
+            margin-bottom: -5px;
+            /* Puxa o casing para cima do stem */
         }
 
         /* O invólucro (casing) vertical - Camada Intermediária */
@@ -697,7 +699,8 @@
             flex-shrink: 0;
             transition: all 0.3s;
             position: absolute;
-            right: -285px; /* 200px de gap + 85px de largura */
+            right: -285px;
+            /* 200px de gap + 85px de largura */
             top: 50%;
             transform: translateY(-50%);
             z-index: 10;
@@ -1137,7 +1140,7 @@
                         <div class="hymn-wrap" style="position: relative;">
                             <select id="hymnSelectFocus" class="load-btn btn-hymn"
                                 style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
-                                <option value="">📖 HNC...</option>
+                                <option value="">📖 Bb...</option>
                             </select>
                             <svg class="icon-svg"
                                 style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
@@ -1212,7 +1215,7 @@
                 <div class="hymn-wrap" style="position: relative;">
                     <select id="hymnSelect" class="load-btn btn-hymn"
                         style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
-                        <option value="">📖 HNC...</option>
+                        <option value="">📖 Bb...</option>
                     </select>
                     <svg class="icon-svg"
                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
@@ -1334,6 +1337,15 @@
                         <option value="trumpet" selected>Trompete</option>
                         <option value="acoustic_grand_piano">Piano</option>
                         <option value="violin">Violino</option>
+                    </select>
+                </div>
+
+                <!-- Afinação -->
+                <div class="cursor-wrap">
+                    <label for="keySelect">Afinação</label>
+                    <select id="keySelect" title="Transposição para instrumentos em Sib (Bb) ou Dó (C)">
+                        <option value="-2" selected>Sib (Bb)</option>
+                        <option value="0">Dó (C)</option>
                     </select>
                 </div>
 
@@ -1528,7 +1540,7 @@
             <p style="margin-top:12px;">Para visualizar melhor a partitura, clique no botão <b>"Foco"</b>.</p>
             <p style="margin-top:12px;"><b>Para abrir uma nova música:</b>
                 Selecione um arquivo de partitura (.mxl, .musicxml) do seu dispositivo no botão de pasta ou utilize o
-                menu HNC para carregar hinos do hinário Novo Cântico diretamente da nossa biblioteca pública.</p>
+                menu de <b>Instrumentos</b> para carregar partituras Bb diretamente da nossa biblioteca pública.</p>
         </div>
     </section>
 
@@ -1579,6 +1591,7 @@
             var currentHymnIndex = 0;
             var soloActive = false;
             var btDelayMs = 0; // Atraso Bluetooth em milissegundos
+            var globalTranspose = -2; // Transposição global (ex: Sib = -2)
 
 
             /* ─── Trumpet Valve Logic ─── */
@@ -1821,7 +1834,7 @@
 
                 if (currentNoteForTiming) {
                     var progress = (elapsedTicks - currentNoteForTiming.start_time) / currentNoteForTiming.duration;
-                    if (progress > 0.85 && nextNote) { 
+                    if (progress > 0.85 && nextNote) {
                         finalNotes = [nextNote];
                         displayNote = { note: nextNote, measureNumber: bestM }; // antecipa display também
                     }
@@ -2460,7 +2473,8 @@
                         if (when >= now) {
                             var partOct = (partConfigs[ev.part] && partConfigs[ev.part].oct) || 0;
                             if (partInsts[ev.part] && typeof partInsts[ev.part].play === 'function') {
-                                var n = partInsts[ev.part].play(ev.midi + partOct, when, { duration: ev.dur });
+                                // Aplica transposição global apenas no áudio
+                                var n = partInsts[ev.part].play(ev.midi + partOct + globalTranspose, when, { duration: ev.dur });
                                 if (n) sc.push(n);
                             }
                         }
@@ -2604,11 +2618,11 @@
                 }
             }
 
-            // GitHub Fetch Logic para Hinário
+            // GitHub Fetch Logic para Biblioteca de Instrumentos Bb
             async function loadHymnList() {
                 var select = document.getElementById('hymnSelect');
                 try {
-                    var githubApiUrl = 'https://api.github.com/repos/GlauberLASantiago/dedo-de-violinista/contents/Trompetes';
+                    var githubApiUrl = 'https://api.github.com/repos/GlauberLASantiago/dedo-de-trompetista/contents/Instrumentos-Bb';
                     var response = await fetch(githubApiUrl);
 
                     if (!response.ok) {
@@ -2655,6 +2669,15 @@
                 var name = this.options[this.selectedIndex].text;
                 document.getElementById('fname').textContent = "Carregando " + name + "...";
                 await loadFromUrl(url, name);
+                
+                // Auto-detect Sib (Bb) for files from the 'Instrumentos Bb' library
+                var kSel = document.getElementById('keySelect');
+                if (kSel) {
+                    kSel.value = "-2";
+                    globalTranspose = -2;
+                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
+                }
+
                 this.value = ""; // Retorna para o placeholder
                 // Sincroniza o seletor do Modo Foco
                 var fSelChg = document.getElementById('hymnSelectFocus');
@@ -2896,6 +2919,23 @@
                     }
                 } catch (_) { }
                 updateSliderTrack();
+
+                // Controle de Afinação (Transposição)
+                var kSel = document.getElementById('keySelect');
+                kSel.onchange = function () {
+                    globalTranspose = parseInt(this.value) || 0;
+                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
+                };
+                try {
+                    var savedK = localStorage.getItem('trumpetKeyTranspose');
+                    if (savedK !== null) {
+                        globalTranspose = parseInt(savedK);
+                        kSel.value = globalTranspose;
+                    }
+                } catch (_) { }
+
+                // Carregar lista de instrumentos do GitHub
+                loadHymnList();
             })();
 
 
