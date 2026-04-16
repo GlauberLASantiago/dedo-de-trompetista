@@ -688,15 +688,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 43px;
-            height: 43px;
+            width: 85px;
+            height: 85px;
             background: var(--ctrl-bg);
             border-radius: 50%;
             border: 2px solid var(--status-info);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
             transition: all 0.3s;
-            position: relative;
+            position: absolute;
+            right: -285px; /* 200px de gap + 85px de largura */
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
         }
 
         .note-display::after {
@@ -712,7 +716,7 @@
         }
 
         .note-display-main {
-            font-size: 17px;
+            font-size: 36px;
             font-weight: 800;
             color: var(--text-main);
             text-align: center;
@@ -1379,10 +1383,6 @@
 
             <!-- Painel de Pistões do Trompete com Mostrador Lateral -->
             <div class="fb-layout-wrap">
-                <div class="note-display" id="noteDisplay" title="Nota atual">
-                    <span class="note-display-main" id="noteDisplayMain">—</span>
-                </div>
-
                 <div style="flex: 1; display: flex; justify-content: center;">
                     <div class="valves-panel" style="margin: 0;">
                         <!-- Bocal SVG realista -- esquerda -->
@@ -1493,6 +1493,11 @@
                                 </div>
                             </div>
 
+                        </div>
+
+                        <!-- Mostrador de Nota -- agora ancorado à direita da campana -->
+                        <div class="note-display" id="noteDisplay" title="Nota atual">
+                            <span class="note-display-main" id="noteDisplayMain">—</span>
                         </div>
                     </div>
                 </div>
