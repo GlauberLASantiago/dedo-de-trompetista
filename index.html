@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#4a3b2c">
+    <meta name="description" content="Visualizador e reprodutor de partituras musicais">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <title>Dedo de trompetista</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎺</text></svg>">
@@ -132,8 +136,10 @@
         .load-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 10px 20px;
+            height: 38px;
+            padding: 0 20px;
             background: #d97706;
             /* Laranja âmbar combinando com o bege */
             color: #fff;
@@ -143,8 +149,8 @@
             cursor: pointer;
             font-family: inherit;
             transition: background .15s;
-            margin-bottom: 6px;
             border: none;
+            box-sizing: border-box;
         }
 
         .load-btn:hover {
@@ -153,6 +159,14 @@
 
         .load-btn input {
             display: none;
+        }
+
+        .btn-hymn {
+            background-color: #059669 !important;
+        }
+
+        .btn-hymn:hover {
+            background-color: #047857 !important;
         }
 
         .fname {
@@ -200,26 +214,12 @@
         }
 
         .btn-play.playing {
-            background: #15803d !important;
+            background: #ef4444 !important;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .btn-pause {
-            background: #f59e0b;
-            color: #fff;
-        }
-
-        .btn-pause:not(:disabled):hover {
-            background: #d97706;
-        }
-
-        .btn-stop {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-stop:not(:disabled):hover {
-            background: #dc2626;
+        .btn-play.playing:hover {
+            background: #dc2626 !important;
         }
 
         .bpm-wrap,
@@ -293,7 +293,6 @@
             outline: none;
         }
 
-        /* ── Range controls ── */
         .range-num {
             width: 44px;
             border: none;
@@ -303,6 +302,10 @@
             color: var(--text-main);
             text-align: center;
             font-family: inherit;
+        }
+
+        .fname {
+            display: none !important;
         }
 
         .range-num:focus {
@@ -320,45 +323,130 @@
             user-select: none;
         }
 
-        /* ─── Trumpet Realistic UI ─── */
+        /* ─── Trumpet Visual — Variáveis de Dimensão ─── */
+        :root {
+            /* Painel */
+            --scene-h: 345px;
+            --tr-pipe-bottom: 173px;
+
+            /* Bocal */
+            --tr-bocal-len: 93px;
+            --tr-bocal-h: 400px;
+            --tr-bocal-x: -150px;
+            --tr-bocal-y: 0px;
+
+            /* Tubo */
+            --tr-pipe-h: 39px;
+            --tr-pipe-w: 393px;
+            --tr-pipe-x: -149px;
+
+            /* Campana */
+            --tr-campana-len: 121px;
+            --tr-campana-wide: 291px;
+            --tr-campana-rim: 4px;
+            --tr-campana-x: -150px;
+            --tr-campana-y: -1px;
+
+            /* Pistões */
+            --valve-gap: 21px;
+            --casing-w: 66px;
+            --casing-h: 158px;
+            --casing-top-w: 74px;
+            --casing-top-h: 18px;
+            --btn-w: 60px;
+            --btn-h: 16px;
+            --stem-w: 21px;
+            --stem-h: 40px;
+            --press-dist: 40px;
+            --tr-valves-x: -8px;
+            --tr-valves-y: 24px;
+        }
+
+        /* ─── Trumpet Valves Panel ─── */
         .valves-panel {
-            height: 280px;
+            height: var(--scene-h);
             max-width: 700px;
-            margin: 40px auto 24px;
+            margin: 0 auto 8px;
             display: flex;
             justify-content: center;
             align-items: flex-end;
             position: relative;
             padding-bottom: 40px;
+            overflow: visible;
         }
 
-        /* O corpo horizontal do trompete */
+        /* Tubo principal */
         .trumpet-pipe {
             position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            height: 35px;
+            bottom: var(--tr-pipe-bottom);
+            left: var(--tr-bocal-len);
+            width: var(--tr-pipe-w);
+            height: var(--tr-pipe-h);
             background: linear-gradient(to bottom, #854d0e 0%, #ca8a04 20%, #fde047 45%, #ca8a04 70%, #854d0e 100%);
             border-top: 1px solid #a16207;
             border-bottom: 1px solid #713f12;
             z-index: 1;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transform: translateX(var(--tr-pipe-x));
+        }
+
+
+        /* ─── Bocal SVG Realista ─── */
+        .trumpet-bocal-svg {
+            position: absolute;
+            left: 0;
+            width: var(--tr-bocal-len);
+            height: var(--tr-bocal-h);
+            bottom: calc(var(--tr-pipe-bottom) + var(--tr-pipe-h) / 2 - var(--tr-bocal-h) / 2);
+            z-index: 3;
+            overflow: visible;
+            transform: translate(var(--tr-bocal-x), calc(-1 * var(--tr-bocal-y)));
+        }
+
+        /* ─── Campana (bell) ─── */
+        .trumpet-campana {
+            position: absolute;
+            right: 0;
+            width: var(--tr-campana-len);
+            height: var(--tr-campana-wide);
+            bottom: calc(var(--tr-pipe-bottom) + var(--tr-pipe-h) / 2 - var(--tr-campana-wide) / 2);
+            background: linear-gradient(to bottom, #854d0e 0%, #ca8a04 20%, #fde047 45%, #ca8a04 70%, #854d0e 100%);
+            clip-path: polygon(0 calc(50% - var(--tr-pipe-h) / 2),
+                    100% 0%,
+                    100% 100%,
+                    0 calc(50% + var(--tr-pipe-h) / 2));
+            z-index: 1;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transform: translate(calc(-1 * var(--tr-campana-x)), calc(-1 * var(--tr-campana-y)));
+        }
+
+        /* Borda elíptica da abertura da campana */
+        .trumpet-campana-rim {
+            position: absolute;
+            right: 0;
+            width: var(--tr-campana-rim);
+            height: var(--tr-campana-wide);
+            bottom: calc(var(--tr-pipe-bottom) + var(--tr-pipe-h) / 2 - var(--tr-campana-wide) / 2);
+            border-radius: 50%;
+            background: radial-gradient(ellipse at 35% center, #2a0e00 0%, #713f12 45%, #a16207 80%);
+            box-shadow: inset 4px 0 10px rgba(0, 0, 0, 0.6), 2px 0 6px rgba(0, 0, 0, 0.4);
+            z-index: 2;
+            transform: translate(calc(-1 * var(--tr-campana-x)), calc(-1 * var(--tr-campana-y)));
         }
 
         .valve-group {
             display: flex;
-            gap: 40px;
+            gap: var(--valve-gap);
             position: relative;
             z-index: 2;
+            transform: translate(var(--tr-valves-x), calc(-1 * var(--tr-valves-y)));
         }
 
         .valve-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 70px;
+            width: var(--casing-w);
             position: relative;
         }
 
@@ -367,7 +455,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 3;
             margin-bottom: -5px;
@@ -375,8 +462,8 @@
 
         /* O botão (pearl/silver) */
         .valve-button {
-            width: 54px;
-            height: 14px;
+            width: var(--btn-w);
+            height: var(--btn-h);
             background: radial-gradient(circle at 50% 0%, #f8fafc, #cbd5e1 70%, #94a3b8);
             border-radius: 50% / 5px;
             border: 2px solid #64748b;
@@ -384,7 +471,7 @@
             position: relative;
         }
 
-        /* O pequeno topo serrilhado que aparece na foto logo abaixo do botão */
+        /* O pequeno topo serrilhado */
         .valve-button::after {
             content: '';
             position: absolute;
@@ -400,8 +487,8 @@
 
         /* A haste (stem) */
         .valve-stem {
-            width: 20px;
-            height: 50px;
+            width: var(--stem-w);
+            height: var(--stem-h);
             background: linear-gradient(to right, #94a3b8, #f8fafc, #64748b);
             border-left: 1px solid #475569;
             border-right: 1px solid #475569;
@@ -409,8 +496,8 @@
 
         /* O invólucro (casing) vertical */
         .valve-casing {
-            width: 62px;
-            height: 120px;
+            width: var(--casing-w);
+            height: var(--casing-h);
             background: linear-gradient(to right, #78350f 0%, #b45309 15%, #fbbf24 40%, #b45309 65%, #78350f 100%);
             border: 2px solid #92400e;
             border-radius: 4px;
@@ -431,8 +518,8 @@
 
         /* A "tampa" de cima do casing */
         .valve-casing-top {
-            width: 68px;
-            height: 16px;
+            width: var(--casing-top-w);
+            height: var(--casing-top-h);
             background: linear-gradient(to right, #94a3b8, #f8fafc 40%, #f8fafc 60%, #94a3b8);
             border: 1px solid #475569;
             border-radius: 4px;
@@ -443,8 +530,9 @@
 
         /* Estado pressionado */
         .valve-container.pressed .valve-piston {
-            transform: translateY(35px);
+            transform: translateY(var(--press-dist));
         }
+
 
         .valve-label {
             font-weight: 800;
@@ -452,6 +540,7 @@
             color: var(--text-main);
             margin-top: 15px;
             opacity: 0.7;
+            transition: all 0.2s;
         }
 
         .valve-container.pressed .valve-label {
@@ -475,6 +564,12 @@
         #score svg {
             max-width: 100%;
             height: auto;
+        }
+
+        /* Correção do deslocamento do cursor (nota e compasso) */
+        #score [id^="cursorImg"] {
+            transform: translate(-5px, -5px) !important;
+            opacity: 0.3 !important;
         }
 
         .credits-footer {
@@ -570,6 +665,421 @@
             height: 28px;
             color: #fff;
         }
+
+        /* ─── Note Display (Lateral) ─── */
+        .fb-layout-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto 16px;
+            max-width: 1000px;
+        }
+
+        .note-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 43px;
+            height: 43px;
+            background: var(--ctrl-bg);
+            border-radius: 50%;
+            border: 2px solid var(--status-info);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            flex-shrink: 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .note-display::after {
+            content: "";
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .note-display-main {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--text-main);
+            text-align: center;
+            letter-spacing: -0.5px;
+            transition: color 0.1s;
+        }
+
+        .note-display-main.active {
+            color: var(--status-info);
+            text-shadow: 0 0 15px rgba(217, 119, 6, 0.3);
+        }
+
+        /* ─── Modo Ocultar Digitação (Pistões) ─── */
+        .hide-visual-aids .fb-layout-wrap {
+            display: none !important;
+        }
+
+
+        /* Ajuste do layout quando o mostrador lateral some */
+        .hide-visual-aids .fb-layout-wrap {
+            gap: 0;
+        }
+
+        #btnToggleAids,
+        #btnSolo,
+        #btnFocus {
+            background-color: #57534e;
+            color: #fff;
+        }
+
+        #btnToggleAids:hover,
+        #btnSolo:hover,
+        #btnFocus:hover {
+            background-color: #44403c;
+        }
+
+        #btnSolo.active {
+            background-color: #f59e0b !important;
+            color: #fff !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+
+        /* ─── Modo Foco (Apenas Partitura) ─── */
+        body.focus-mode {
+            background-color: #fff;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        body.focus-mode .hd,
+        body.focus-mode .top-bar,
+        body.focus-mode .fname-hidden-deprecated,
+        /* Removido .fname daqui */
+        body.focus-mode .controls,
+        body.focus-mode .fb-layout-wrap,
+        body.focus-mode .visualizer-panel,
+        body.focus-mode .credits-footer,
+        body.focus-mode .inst-guide {
+            display: none !important;
+        }
+
+        /* Área superior minimalista no modo foco */
+        body.focus-mode .body>div:first-child {
+            justify-content: center !important;
+            padding: 24px 0 10px !important;
+            margin: 0 !important;
+        }
+
+        body.focus-mode .body>div:first-child>*:not(#focusModeBar) {
+            display: none !important;
+        }
+
+        /* ─── Barra de controles do Modo Foco ─── */
+        #focusModeBar {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        body.focus-mode #focusModeBar {
+            display: flex !important;
+        }
+
+        #focusModeBar .focus-group-left,
+        #focusModeBar .focus-group-center,
+        #focusModeBar .focus-group-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #focusModeBar .focus-group-left,
+        #focusModeBar .focus-group-right {
+            flex: 1;
+        }
+
+        #focusModeBar .focus-group-center {
+            justify-content: center;
+        }
+
+        #focusModeBar .focus-group-right {
+            justify-content: flex-end;
+        }
+
+        .focus-bar-sep {
+            width: 1px;
+            height: 26px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 2px;
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        #btnExitFocus {
+            display: none;
+            background: #57534e;
+            color: #fff;
+            border: none;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        #btnExitFocus:hover {
+            background: #44403c;
+            transform: translateY(-1px);
+        }
+
+        body.focus-mode #btnExitFocus {
+            display: inline-flex !important;
+        }
+
+        body.focus-mode .card {
+            max-width: 100%;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        /* ─── Responsividade para Celular ─── */
+        @media (max-width: 768px) {
+            body {
+                padding: 6px 4px;
+            }
+
+            .card {
+                border-radius: 12px;
+            }
+
+            .body {
+                padding: 16px 12px;
+            }
+
+            /* Menu compacto no mobile para economizar espaço */
+            .btn,
+            .load-btn,
+            .bpm-wrap,
+            .met-wrap,
+            .rev-wrap,
+            .zoom-wrap,
+            .cursor-wrap,
+            .range-wrap,
+            .hymn-wrap .load-btn {
+                height: 28px;
+                font-size: 11px;
+                padding: 0 8px;
+            }
+
+            .load-btn span,
+            .btn span {
+                font-size: 10px;
+            }
+
+            .bpm-wrap input[type="number"],
+            .rev-wrap input,
+            .zoom-wrap input,
+            .range-num {
+                font-size: 13px;
+                width: 40px;
+            }
+
+            .controls {
+                gap: 6px;
+                justify-content: center;
+            }
+
+            /* Painel de pistões na largura total */
+            .valves-panel {
+                width: 100%;
+                max-width: none !important;
+                padding-bottom: 30px;
+                height: var(--scene-h);
+            }
+
+            .fb-layout-wrap {
+                padding: 0;
+                margin: 0 -12px 10px -12px;
+                /* Compensa o padding da .body */
+                width: calc(100% + 24px);
+            }
+
+            .fb-layout-wrap .note-display {
+                margin-left: 5px;
+            }
+
+            #score {
+                width: calc(100% + 24px);
+                margin: 15px -12px 0 -12px;
+                /* Compensa o padding da .body */
+                padding: 10px 4px;
+                border-left: none;
+                border-right: none;
+                border-radius: 0;
+            }
+
+            /* Ajuste extra para os controles do Modo Foco: pequena e em linha única */
+            #focusModeBar {
+                flex-wrap: nowrap !important;
+                justify-content: space-between;
+                gap: 5px;
+                padding: 4px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+            }
+
+            #focusModeBar::-webkit-scrollbar {
+                display: none;
+            }
+
+            #focusModeBar .btn,
+            #focusModeBar .load-btn,
+            #focusModeBar .hymn-wrap .load-btn {
+                height: 28px !important;
+                font-size: 11px !important;
+                padding: 0 8px !important;
+                flex-shrink: 0;
+            }
+
+            /* Esconde o texto dos botões no modo foco para deixar apenas símbolos */
+            #focusModeBar .btn span,
+            #btnExitFocus span {
+                display: none;
+            }
+        }
+
+        /* ─── Painel de Atraso Bluetooth ─── */
+        #btDelayPanel {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--ctrl-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px 12px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 520px;
+            animation: btSlideIn 0.2s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        #btDelayPanel.visible {
+            display: flex;
+        }
+
+        @keyframes btSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bt-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .bt-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .bt-panel-title svg {
+            color: #3b82f6;
+        }
+
+        .bt-slider-row {
+            display: flex;
+            align-items: center;
+        }
+
+        #btDelaySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #3b82f6 0%, #3b82f6 var(--pct, 0%), var(--border, #d4c5ae) var(--pct, 0%), var(--border, #d4c5ae) 100%);
+            outline: none;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        #btDelaySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid #fff;
+            box-shadow: 0 1px 6px rgba(59, 130, 246, 0.5);
+            cursor: pointer;
+        }
+
+        #btDelaySlider::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid #fff;
+            box-shadow: 0 1px 6px rgba(59, 130, 246, 0.5);
+            cursor: pointer;
+        }
+
+        .bt-delay-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: #3b82f6;
+            min-width: 60px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bt-hint {
+            font-size: 11px;
+            color: var(--text-sub);
+            line-height: 1.4;
+        }
+
+        #btnBluetooth {
+            background-color: #3b82f6;
+            color: #fff;
+        }
+
+        #btnBluetooth:hover {
+            background-color: #2563eb;
+        }
+
+        #btnBluetooth.active {
+            background-color: #1d4ed8 !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 
@@ -579,7 +1089,7 @@
         <div class="hd">
             <div>
                 <div class="hd-title">Dedo de trompetista</div>
-                <div class="hd-sub">Visualizador Interativo de Partituras com Guia de Dedilhado para Trompete</div>
+                <div class="hd-sub">Visualizador Interativo de Partituras com Guia de Pistões para Trompete</div>
             </div>
             <button class="theme-toggle" id="themeToggle" title="Alternar tema">
                 <svg id="themeIconSun" class="icon-svg" style="display:none;" viewBox="0 0 24 24">
@@ -600,61 +1110,132 @@
         </div>
 
         <div class="body">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <label class="load-btn">
-                    <svg class="icon-svg" style="width:16px;height:16px;margin-right:6px;" viewBox="0 0 24 24">
-                        <path
-                            d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.69.9H18a2 2 0 0 1 2 2v2">
-                        </path>
-                    </svg>
-                    <span>Carregar partitura</span>
-                    <input type="file" id="fi" accept=".xml,.musicxml,.mxl">
-                </label>
+            <!-- Barra de controles visível apenas no Modo Foco -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div id="focusModeBar">
+                    <div class="focus-group-left">
+                        <button class="load-btn btn-hymn" onclick="document.getElementById('btnPrevHymn').click()"
+                            title="Hino Anterior" style="padding:0 14px; min-width:auto; margin-right:2px;">
+                            <svg class="icon-svg"
+                                style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;"
+                                viewBox="0 0 24 24">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <div class="hymn-wrap" style="position: relative;">
+                            <select id="hymnSelectFocus" class="load-btn btn-hymn"
+                                style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
+                                <option value="">📖 HNC...</option>
+                            </select>
+                            <svg class="icon-svg"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
+                                viewBox="0 0 24 24">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <button class="load-btn btn-hymn" onclick="document.getElementById('btnNextHymn').click()"
+                            title="Próximo Hino" style="padding:0 14px; min-width:auto; margin-left:2px;">
+                            <svg class="icon-svg"
+                                style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;"
+                                viewBox="0 0 24 24">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
 
-                <button class="load-btn" id="btnExport" style="background:#0284c7;" disabled
-                    title="Salvar este app com a partitura atual embutida">
-                    <svg class="icon-svg" style="width:16px;height:16px;margin-right:6px;" viewBox="0 0 24 24">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    <span>Salvar como HTML</span>
-                </button>
+                    </div>
+
+                    <div class="focus-group-center">
+                        <button class="btn btn-play" id="bpFocus" onclick="document.getElementById('bp').click()"
+                            title="Tocar">
+                            <svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="focus-group-right">
+                        <button id="btnExitFocus" style="display:none;" title="Sair do Modo Foco">
+                            <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;"
+                                viewBox="0 0 24 24">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="fname" id="fname">Nenhum arquivo selecionado</div>
 
             <div class="controls">
+                <!-- Carregar partitura -->
+                <label class="load-btn" title="Carregar partitura" style="padding: 0 14px; min-width: auto;">
+                    <svg class="icon-svg" style="width:16px;height:16px;" viewBox="0 0 24 24">
+                        <path
+                            d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.69.9H18a2 2 0 0 1 2 2v2">
+                        </path>
+                    </svg>
+                    <input type="file" id="fi" accept=".xml,.musicxml,.mxl">
+                </label>
+
+                <!-- Salvar com HTML -->
+                <button class="load-btn" id="btnExport" style="background:#0284c7; padding: 0 14px; min-width: auto;"
+                    disabled title="Salvar este app com a partitura atual embutida">
+                    <svg class="icon-svg" style="width:16px;height:16px;" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+
+                <!-- Seletores do HNC -->
+                <button class="load-btn btn-hymn" id="btnPrevHymn" title="Hino Anterior"
+                    style="padding: 0 14px; min-width: auto; margin-right: 2px;">
+                    <svg class="icon-svg" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;"
+                        viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+
+                <div class="hymn-wrap" style="position: relative;">
+                    <select id="hymnSelect" class="load-btn btn-hymn"
+                        style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
+                        <option value="">📖 HNC...</option>
+                    </select>
+                    <svg class="icon-svg"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
+                        viewBox="0 0 24 24">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+
+                <button class="load-btn btn-hymn" id="btnNextHymn" title="Próximo Hino"
+                    style="padding: 0 14px; min-width: auto; margin-left: 2px;">
+                    <svg class="icon-svg" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;"
+                        viewBox="0 0 24 24">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+
+                <!-- Tocar/Parar -->
                 <button class="btn btn-play" id="bp" disabled>
                     <svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
-                    Play
-                </button>
-                <button class="btn btn-pause" id="bpa" disabled>
-                    <svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24">
-                        <rect x="6" y="4" width="4" height="16"></rect>
-                        <rect x="14" y="4" width="4" height="16"></rect>
-                    </svg>
-                    Pause
-                </button>
-                <button class="btn btn-stop" id="bs" disabled>
-                    <svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24">
-                        <rect x="4" y="4" width="16" height="16"></rect>
-                    </svg>
-                    Stop
+                    Tocar
                 </button>
 
-                <div class="bpm-wrap">
+                <!-- BPM -->
+                <div class="range-wrap">
                     <label for="bpm">BPM</label>
-                    <input type="number" id="bpm" value="100" min="20" max="400">
+                    <input type="number" id="bpm" value="100" min="20" max="400" step="1">
+                    <label class="check-wrap" style="font-size: 10px; margin-left: 2px; color: var(--text-sub);"
+                        title="Reduzir 30 BPM automaticamente ao carregar">
+                        <input type="checkbox" id="bpmRedCheck" checked> -30
+                    </label>
                 </div>
 
-                <div class="met-wrap">
-                    <label for="metCheck">Metrônomo</label>
-                    <input type="checkbox" id="metCheck" checked>
-                </div>
-
+                <!-- Contagem -->
                 <div class="met-wrap">
                     <label for="countInSelect" title="Compassos de metrônomo antes de começar">Contagem</label>
                     <select id="countInSelect">
@@ -665,38 +1246,13 @@
                     </select>
                 </div>
 
+                <!-- Metrônomo -->
                 <div class="met-wrap">
-                    <label for="loopCheck">Loop</label>
-                    <input type="checkbox" id="loopCheck" checked>
+                    <label for="metCheck">Metrônomo</label>
+                    <input type="checkbox" id="metCheck" checked>
                 </div>
 
-                <div class="rev-wrap">
-                    <label for="reverbAmt">Reverber</label>
-                    <input type="number" id="reverbAmt" value="15" min="0" max="100">
-                </div>
-
-                <div class="zoom-wrap">
-                    <label for="zoomInp">Zoom %</label>
-                    <input type="number" id="zoomInp" value="100" min="40" max="300" step="5">
-                </div>
-
-                <div class="met-wrap" title="Transposição do instrumento">
-                    <label for="transpSelect">Afinação</label>
-                    <select id="transpSelect">
-                        <option value="-2" selected>Trompete em Si♭</option>
-                        <option value="0">Trompete em Dó</option>
-                    </select>
-                </div>
-
-                <div class="cursor-wrap">
-                    <label for="cursorMode">Cursor</label>
-                    <select id="cursorMode" title="Modo de destaque do cursor (Nota ou Compasso)">
-                        <option value="0">Nota</option>
-                        <option value="3" selected>Compasso</option>
-                        <option value="-1">Sem cursor</option>
-                    </select>
-                </div>
-
+                <!-- Trecho -->
                 <div class="range-wrap" title="Definir trecho para execução">
                     <label>Trecho</label>
                     <input type="number" id="rangeFrom" class="range-num" value="1" min="1" title="Compasso inicial"
@@ -706,51 +1262,236 @@
                         disabled>
                 </div>
 
+                <!-- Loop -->
+                <div class="met-wrap">
+                    <label for="loopCheck">Loop</label>
+                    <input type="checkbox" id="loopCheck" checked>
+                </div>
+
+                <!-- Cursor -->
+                <div class="cursor-wrap">
+                    <label for="cursorMode">Cursor</label>
+                    <select id="cursorMode" title="Modo de destaque do cursor (Nota ou Compasso)">
+                        <option value="0">Nota</option>
+                        <option value="3" selected>Compasso</option>
+                        <option value="-1">Sem cursor</option>
+                    </select>
+                </div>
+
+                <!-- Zoom -->
+                <div class="zoom-wrap">
+                    <label for="zoomInp">Zoom %</label>
+                    <input type="number" id="zoomInp" value="100" min="40" max="300" step="5">
+                </div>
+
+                <!-- Pistões -->
+                <button class="btn" id="btnToggleAids" title="Ocultar/Mostrar os pistões do trompete">
+                    <svg id="aidsIconShow" class="icon-svg" style="width:14px;height:14px;" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg id="aidsIconHide" class="icon-svg" style="width:14px;height:14px;display:none;"
+                        viewBox="0 0 24 24">
+                        <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                        </path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <span>Pistões</span>
+                </button>
+
+                <!-- Foco -->
+                <button class="btn" id="btnFocus" title="Modo Foco: Mostrar apenas a partitura">
+                    <svg class="icon-svg" style="width:14px;height:14px;fill:none;stroke:currentColor;"
+                        viewBox="0 0 24 24">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                    </svg>
+                    <span>Foco</span>
+                </button>
+
+                <!-- Reverber -->
+                <div class="rev-wrap">
+                    <label for="reverbAmt">Reverber</label>
+                    <input type="number" id="reverbAmt" value="15" min="0" max="100">
+                </div>
+
+                <!-- Som -->
+                <div class="cursor-wrap">
+                    <label for="instSelect">Som</label>
+                    <select id="instSelect" title="Escolher o som dos instrumentos">
+                        <option value="trumpet" selected>Trompete</option>
+                        <option value="acoustic_grand_piano">Piano</option>
+                        <option value="violin">Violino</option>
+                    </select>
+                </div>
+
+                <!-- Guia -->
                 <div class="cursor-wrap" id="guidePartWrap" style="display:none;"
-                    title="Escolher qual instrumento será exibido nos pistões">
+                    title="Escolher qual instrumento será exibido nos pistões do trompete">
                     <label for="guidePartSelect">Guia</label>
                     <select id="guidePartSelect"></select>
                 </div>
 
+                <!-- Solo -->
+                <button class="btn" id="btnSolo" title="Solo: Ouvir apenas o instrumento da Guia" style="display:none;">
+                    <span>SOLO</span>
+                </button>
+
+                <!-- Bluetooth -->
+                <button class="btn" id="btnBluetooth" title="Ajuste de atraso para fones Bluetooth">
+                    <svg class="icon-svg" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;"
+                        viewBox="0 0 24 24">
+                        <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"></polyline>
+                    </svg>
+                    <span>Atraso BT</span>
+                </button>
+
+
                 <div id="partsPanel" class="parts-panel" style="display:none;"></div>
             </div>
 
-            <!-- Trumpet valves section -->
-            <div class="valves-panel">
-                <div class="trumpet-pipe"></div>
-                <div class="valve-group">
-                    <div class="valve-container" id="valve1">
-                        <div class="valve-piston">
-                            <div class="valve-button"></div>
-                            <div class="valve-stem"></div>
-                        </div>
-                        <div class="valve-casing-top"></div>
-                        <div class="valve-casing">
-                            <div class="casing-number">1</div>
-                        </div>
-                        <div class="valve-label">1</div>
+            <!-- Painel de atraso Bluetooth (inline, abaixo dos botões) -->
+            <div id="btDelayPanel">
+                <div class="bt-panel-header">
+                    <div class="bt-panel-title">
+                        <svg style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;"
+                            viewBox="0 0 24 24">
+                            <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"></polyline>
+                        </svg>
+                        Atraso Bluetooth
                     </div>
-                    <div class="valve-container" id="valve2">
-                        <div class="valve-piston">
-                            <div class="valve-button"></div>
-                            <div class="valve-stem"></div>
+                    <span class="bt-delay-value" id="btDelayValue">0 ms</span>
+                </div>
+                <div class="bt-slider-row">
+                    <input type="range" id="btDelaySlider" min="0" max="1200" step="50" value="0">
+                </div>
+                <div class="bt-hint">Atrasa o visual para sincronizar com fones Bluetooth — passos de 50 ms até 1200 ms.
+                </div>
+            </div>
+
+            <!-- Painel de Pistões do Trompete com Mostrador Lateral -->
+            <div class="fb-layout-wrap">
+                <div class="note-display" id="noteDisplay" title="Nota atual">
+                    <span class="note-display-main" id="noteDisplayMain">—</span>
+                </div>
+
+                <div style="flex: 1; display: flex; justify-content: center;">
+                    <div class="valves-panel" style="margin: 0;">
+                        <!-- Bocal SVG realista -- esquerda -->
+                        <svg class="trumpet-bocal-svg" viewBox="0 0 100 180" xmlns="http://www.w3.org/2000/svg"
+                            preserveAspectRatio="xMaxYMid meet">
+                            <defs>
+                                <!-- Gradiente prata metálico (cima claro → baixo escuro) -->
+                                <linearGradient id="bslBody" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#c8d8e6" />
+                                    <stop offset="14%" stop-color="#eef4f8" />
+                                    <stop offset="30%" stop-color="#f8fafc" />
+                                    <stop offset="50%" stop-color="#dce8f0" />
+                                    <stop offset="75%" stop-color="#96afc2" />
+                                    <stop offset="100%" stop-color="#516070" />
+                                </linearGradient>
+                                <!-- Realce especular no topo -->
+                                <linearGradient id="bslHL" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="rgba(255,255,255,.65)" />
+                                    <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+                                </linearGradient>
+                                <!-- Gradiente radial da face da copa (rim plate) -->
+                                <radialGradient id="bslRim" cx="38%" cy="36%" r="62%">
+                                    <stop offset="0%" stop-color="#f8fafc" />
+                                    <stop offset="48%" stop-color="#cdd8e4" />
+                                    <stop offset="100%" stop-color="#3a5060" />
+                                </radialGradient>
+                            </defs>
+
+                            <!-- === CORPO PRINCIPAL === -->
+                            <!-- Perfil: rim (esq, largo) → cup bowl → garganta (estreito) → degrau → shank (dir) -->
+                            <path d="
+                            M 5,25
+                            C 22,25 44,36 54,60
+                            C 60,72  63,78  65,82
+                            L 68,76
+                            C 72,72  77,72  82,73
+                            L 100,74
+                            L 100,106
+                            L 82,107
+                            C 77,108 72,108 68,104
+                            L 65,98
+                            C 63,102 60,108 54,120
+                            C 44,144  22,155  5,155
+                            Z" fill="url(#bslBody)" stroke="#8aa4b8" stroke-width="0.5" />
+
+                            <!-- Faixa de realce especular no topo -->
+                            <path d="
+                            M 5,25
+                            C 22,25 44,36 54,60
+                            C 60,72  63,78  65,82
+                            L 68,76
+                            C 72,72  77,72  82,73
+                            L 100,74
+                            L 100,88
+                            L 82,87
+                            C 77,86  72,85  68,89
+                            L 65,95
+                            C 63,91  60,85  54,73
+                            C 44,49  22,38  5,38
+                            Z" fill="url(#bslHL)" opacity="0.7" />
+
+                            <!-- Ranhuras/anéis decorativos -->
+                            <rect x="65.5" y="76" width="2" height="28" rx="1" fill="rgba(0,0,0,.45)" />
+                            <rect x="70" y="73" width="1.2" height="34" rx="0.6" fill="rgba(0,0,0,.25)" />
+                            <rect x="81.5" y="73" width="2" height="34" rx="1" fill="rgba(0,0,0,.45)" />
+
+                            <!-- === PRATO/RIM (face circular da copa) === -->
+                            <!-- sombra da borda do prato -->
+                            <ellipse cx="5" cy="90" rx="9" ry="67" fill="#2e4454" />
+                            <!-- face principal do prato -->
+                            <ellipse cx="8" cy="90" rx="8" ry="65" fill="url(#bslRim)" />
+                            <!-- sulco interno do prato -->
+                            <ellipse cx="10" cy="90" rx="3" ry="50" fill="none" stroke="rgba(0,0,0,.35)"
+                                stroke-width="1.5" />
+                        </svg>
+
+                        <!-- Tubo principal -->
+                        <div class="trumpet-pipe"></div>
+                        <!-- Campana (bell) — direita -->
+                        <div class="trumpet-campana"></div>
+                        <div class="trumpet-campana-rim"></div>
+                        <div class="valve-group">
+
+                            <div class="valve-container" id="valve1">
+                                <div class="valve-piston">
+                                    <div class="valve-button"></div>
+                                    <div class="valve-stem"></div>
+                                </div>
+                                <div class="valve-casing-top"></div>
+                                <div class="valve-casing">
+                                    <div class="casing-number">1</div>
+                                </div>
+                            </div>
+
+                            <div class="valve-container" id="valve2">
+                                <div class="valve-piston">
+                                    <div class="valve-button"></div>
+                                    <div class="valve-stem"></div>
+                                </div>
+                                <div class="valve-casing-top"></div>
+                                <div class="valve-casing">
+                                    <div class="casing-number">2</div>
+                                </div>
+                            </div>
+
+                            <div class="valve-container" id="valve3">
+                                <div class="valve-piston">
+                                    <div class="valve-button"></div>
+                                    <div class="valve-stem"></div>
+                                </div>
+                                <div class="valve-casing-top"></div>
+                                <div class="valve-casing">
+                                    <div class="casing-number">3</div>
+                                </div>
+                            </div>
+
                         </div>
-                        <div class="valve-casing-top"></div>
-                        <div class="valve-casing">
-                            <div class="casing-number">2</div>
-                        </div>
-                        <div class="valve-label">2</div>
-                    </div>
-                    <div class="valve-container" id="valve3">
-                        <div class="valve-piston">
-                            <div class="valve-button"></div>
-                            <div class="valve-stem"></div>
-                        </div>
-                        <div class="valve-casing-top"></div>
-                        <div class="valve-casing">
-                            <div class="casing-number">3</div>
-                        </div>
-                        <div class="valve-label">3</div>
                     </div>
                 </div>
             </div>
@@ -762,27 +1503,25 @@
     <section class="inst-guide">
         <h3>
             <svg class="icon-svg" style="width:18px;height:18px;color:#d97706;" viewBox="0 0 24 24">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            Guia para Professores
+            Guia para o Usuário
         </h3>
-        <div class="inst-steps">
-            <div class="step"><span class="step-num">1</span><b>Exportar XML</b>No MuseScore (ou similar), exporte sua
-                partitura em formato MusicXML (.musicxml ou .xml).</div>
-            <div class="step"><span class="step-num">2</span><b>Carregar & Ajustar</b>Use o botão azul acima para
-                carregar o arquivo. Ajuste Andamento (BPM), Reverberação e Zoom conforme desejado.
-            </div>
-            <div class="step"><span class="step-num">3</span><b>Trecho</b>Defina o compasso inicial e final em
-                <b>Trecho</b> para executar apenas uma parte da música.
-            </div>
-        </div>
-        <div class="inst-obs"
-            style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);font-size:13.5px;line-height:1.6;color:var(--text-sub);">
-            <p><b>⚠️ Nota:</b> O Dedo de trompetista é uma ferramenta focada em operações básicas e acessibilidade.
-                Todos
-                os canais e vozes estão pré-configurados automaticamente para soar como <b>Trompete</b>. O diagrama
-                exibe os pistões para ajudar na visualização inicial.</p>
+        <div style="font-size:13px; color:var(--text-sub); line-height:1.7;">
+            <p>Trompetista, assim que o app é aberto, ele já está programado para:
+                tocar em um andamento (BPM) mais lento;
+                iniciar com uma contagem de 2 compassos (para dar tempo de você pegar o seu instrumento);
+                estar com o metrônomo ligado;
+                tocar em loop (para você poder praticar várias vezes sem ter que soltar o instrumento);
+                utilizar som de trompete (e não o de piano);
+                exibir a "guia visual" dos pistões selecionados para o primeiro pentagrama do sistema; e
+                reproduzir todos os instrumentos (e não em solo). Se for utilizar dispositivos Bluetooth e tiver com
+                atraso no áudio, utilize o botão específico para calibrar.</p>
+            <p style="margin-top:12px;">Depois, você pode alterar todas essas configurações.</p>
+            <p style="margin-top:12px;">Para visualizar melhor a partitura, clique no botão <b>"Foco"</b>.</p>
+            <p style="margin-top:12px;"><b>Para abrir uma nova música:</b>
+                Selecione um arquivo de partitura (.mxl, .musicxml) do seu dispositivo no botão de pasta ou utilize o
+                menu HNC para carregar hinos do hinário Novo Cântico diretamente da nossa biblioteca pública.</p>
         </div>
     </section>
 
@@ -813,7 +1552,7 @@
             };
 
             var osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay('score', {
-                backend: 'svg', autoResize: true, drawTitle: true, followCursor: false
+                backend: 'svg', autoResize: true, drawTitle: true, drawSubtitle: false, followCursor: false
             });
 
             /* ─── Estado global ──────────────────────────────────────────────── */
@@ -822,82 +1561,265 @@
             var evs = [], ac = null, sc = [], sat = 0, pat = 0, run = false, rawXml = '', appSource = '';
             var drumPlayer = new WebAudioFontPlayer();
             var cursorTimer = null, cursorSteps = [], cursorIndex = 0;
+            var metronomeAnchorTime = 0;
             var inputGain = null, masterGain = null, dryGain = null, wetGain = null, convolver = null;
             var playbackEndTimer = null, pieceEnd = 0;
             var scoreClickTimer = null;
             var cursorStepsCache = { bpm: null, xml: null, mode: 3 };
             var totalMeasures = 0, playbackStartOffset = 0;
+            var xmlNoteMap = {}; // Mapa manual de notas extraídas do MusicXML (indexado por partIndex)
+            var originalXmlBpm = null;
+            var currentHymnIndex = 0;
+            var soloActive = false;
+            var btDelayMs = 0; // Atraso Bluetooth em milissegundos
 
-            /* ─── Trumpet Logic ─── */
+
+            /* ─── Trumpet Valve Logic ─── */
+            /**
+             * Mapeia a nota MIDI para os pistões do trompete.
+             * Como ré# = mib no trompete (mesma posição), o MIDI é usado diretamente.
+             * Retorna um array com os pistões que devem ser pressionados (ex: [1, 3]) ou null.
+             */
             function getTrumpetFingering(midi) {
-                // Mapeamento de MIDI (escrito para trompete em SIB) para pistões [1, 2, 3]
-                var fingerings = {
-                    54: [1, 2, 3], // F#3
-                    55: [1, 3],    // G3
-                    56: [2, 3],    // G#3
-                    57: [1, 2],    // A3
-                    58: [1],       // Bb3
-                    59: [2],       // B3
-                    60: [],        // C4
-                    61: [1, 2, 3], // C#4
-                    62: [1, 3],    // D4
-                    63: [2, 3],    // Eb4
-                    64: [1, 2],    // E4
-                    65: [1],       // F4
-                    66: [2],       // F#4
-                    67: [],        // G4
-                    68: [2, 3],    // Ab4
-                    69: [1, 2],    // A4
-                    70: [1],       // Bb4
-                    71: [2],       // B4
-                    72: [],        // C5
-                    73: [1, 2],    // C#5
-                    74: [1],       // D5
-                    75: [2],       // Eb5
-                    76: [],        // E5
-                    77: [1],       // F5
-                    78: [2],       // F#5
-                    79: [],        // G5
-                    80: [2, 3],    // Ab5
-                    81: [1, 2],    // A5
-                    82: [1],       // Bb5
-                    83: [2],       // B5
-                    84: []         // C6
+                // A lógica é cíclica a cada 12 semitons (oitava)
+                var semi = midi % 12;
+                // Tabela de pistões por classe de altura (independente da oitava)
+                var fingeringTable = {
+                    0: [],        // C  (Dó)
+                    1: [1, 2, 3], // C# / Db
+                    2: [1, 3],    // D  (Ré)
+                    3: [2, 3],    // D# / Eb
+                    4: [1, 2],    // E  (Mi)
+                    5: [1],       // F  (Fá)
+                    6: [2],       // F# / Gb  (alternativo: [1,2,3])
+                    7: [],        // G  (Sol)
+                    8: [2, 3],    // G# / Ab
+                    9: [1, 2],    // A  (Lá)
+                    10: [1],       // A# / Bb  (Si bemol)
+                    11: [2]        // B  (Si)
                 };
-                return fingerings[midi] || null;
+                // Verifica se o MIDI está em um range razoável para trompete (F#3 a C7)
+                if (midi < 54 || midi > 84) return null;
+                return fingeringTable[semi] !== undefined ? fingeringTable[semi] : null;
             }
 
-            function updateFingerboard(activeMidis, forceReset = false) {
-                if (activeMidis.length === 0 && !forceReset) return;
-
-                var valves = [1, 2, 3];
+            function updateFingerboard(activeNotes) {
                 var pressed = { 1: false, 2: false, 3: false };
 
-                if (!forceReset) {
-                    activeMidis.forEach(function (midi) {
+                if (activeNotes && activeNotes.length > 0) {
+                    activeNotes.forEach(function (noteObj) {
+                        var midi = (typeof noteObj === 'object' && noteObj !== null) ? noteObj.midi : noteObj;
                         var f = getTrumpetFingering(midi);
                         if (f) {
-                            f.forEach(v => pressed[v] = true);
+                            f.forEach(function (v) { pressed[v] = true; });
                         }
                     });
                 }
 
-                valves.forEach(function (v) {
+                [1, 2, 3].forEach(function (v) {
                     var el = document.getElementById('valve' + v);
                     if (!el) return;
-                    if (pressed[v]) el.classList.add('pressed');
-                    else el.classList.remove('pressed');
+                    if (pressed[v]) {
+                        el.classList.add('pressed');
+                    } else {
+                        el.classList.remove('pressed');
+                    }
                 });
+            }
+
+            /* ─── Parser Manual MusicXML (fonte da verdade do pitch) ────────────────────
+             * Regras estritas: lê apenas a primeira <part>, Staff 1.
+             * Lida com <forward>, <backup>, <chord>, <grace> e múltiplas vozes.
+             * ─────────────────────────────────────────────────────────────────────────── */
+            function buildXmlNoteMap(xmlString) {
+                xmlNoteMap = {};
+                if (!xmlString) return;
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(xmlString, 'text/xml');
+                var parts = doc.querySelectorAll('part');
+                if (!parts.length) return;
+
+                parts.forEach(function (part, partIdx) {
+                    var measures = part.querySelectorAll('measure');
+                    var partMap = [];
+                    var currentDivisions = 1; // fallback por parte
+
+                    measures.forEach(function (measure) {
+                        var measureNumber = parseInt(measure.getAttribute('number')) || 0;
+                        var divEl = measure.querySelector('attributes > divisions');
+                        if (divEl) currentDivisions = parseInt(divEl.textContent) || currentDivisions;
+                        var divisions = currentDivisions;
+
+                        var current_time = 0;
+                        var prev_duration = 0;
+                        var notes = [];
+
+                        var children = measure.children;
+                        for (var ci = 0; ci < children.length; ci++) {
+                            var el = children[ci];
+                            var tag = el.tagName;
+
+                            if (tag === 'forward') {
+                                var fDurEl = el.querySelector('duration');
+                                current_time += fDurEl ? (parseInt(fDurEl.textContent) || 0) : 0;
+                                prev_duration = 0;
+                            } else if (tag === 'backup') {
+                                var bDurEl = el.querySelector('duration');
+                                var bDur = bDurEl ? (parseInt(bDurEl.textContent) || 0) : 0;
+                                current_time = Math.max(0, current_time - bDur);
+                                prev_duration = 0;
+                            } else if (tag === 'note') {
+                                if (el.querySelector('grace')) continue;
+                                var isChord = !!el.querySelector('chord');
+                                var isRest = !!el.querySelector('rest');
+                                var durEl = el.querySelector('duration');
+                                var dur = durEl ? (parseInt(durEl.textContent) || 0) : 0;
+
+                                var staffEl = el.querySelector('staff');
+                                var staffNum = staffEl ? parseInt(staffEl.textContent) : 1;
+                                var startTime = isChord ? Math.max(0, current_time - prev_duration) : current_time;
+
+                                if (staffNum === 1 && !isRest) {
+                                    var pitchEl = el.querySelector('pitch');
+                                    if (pitchEl) {
+                                        var stepEl = pitchEl.querySelector('step');
+                                        var step = stepEl ? stepEl.textContent.trim() : 'C';
+                                        var alterEl = pitchEl.querySelector('alter');
+                                        var alter = alterEl ? parseFloat(alterEl.textContent) : 0;
+                                        var octaveEl = pitchEl.querySelector('octave');
+                                        var octave = octaveEl ? parseInt(octaveEl.textContent) : 4;
+                                        var stepToSemi = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+                                        var midi = (octave + 1) * 12 + (stepToSemi[step] || 0) + Math.round(alter);
+                                        notes.push({
+                                            beat: 1 + (startTime / divisions),
+                                            start_time: startTime,
+                                            duration: dur,
+                                            step: step,
+                                            alter: alter,
+                                            octave: octave,
+                                            midi: midi
+                                        });
+                                    }
+                                }
+                                if (!isChord) {
+                                    current_time += dur;
+                                    prev_duration = dur;
+                                }
+                            }
+                        }
+                        notes.sort(function (a, b) { return a.start_time - b.start_time; });
+                        partMap.push({ measureNumber: measureNumber, divisions: divisions, notes: notes });
+                    });
+                    xmlNoteMap[partIdx] = partMap;
+                });
+            }
+
+            function getNoteNamePt(step, alter) {
+                var names = { C: 'Dó', D: 'Ré', E: 'Mi', F: 'Fá', G: 'Sol', A: 'Lá', B: 'Si' };
+                var name = names[step] || step;
+                if (alter >= 0.9) name += '♯';
+                else if (alter <= -0.9) name += '♭';
+                return name;
+            }
+
+            /**
+             * Devolve os MIDIs activos e a nota corrente no instante currentSec (segundos desde o início da peça),
+             * consultando o parser MusicXML manual em vez dos objectos internos do OSMD.
+             */
+            function getActiveMidisFromXmlMap(currentSec) {
+                var gSelect = document.getElementById('guidePartSelect');
+                var selectedPartIdx = gSelect ? parseInt(gSelect.value) : 0;
+                var currentMap = xmlNoteMap[selectedPartIdx];
+                if (!currentMap || !currentMap.length) return { notes: [], note: null };
+
+                var bpm = +document.getElementById('bpm').value || 100;
+
+                // 1. Encontrar o compasso atual
+                var bestIdx = -1, bestT = -1, bestM = -1;
+                for (var i = 0; i < measureTimeArray.length; i++) {
+                    var mt = measureTimeArray[i];
+                    if (!mt) continue;
+                    if (mt.t <= currentSec + 0.01 && mt.t > bestT) {
+                        bestT = mt.t;
+                        bestIdx = mt.index;
+                        bestM = mt.m;
+                    }
+                }
+                if (bestIdx === -1) return { notes: [], note: null };
+
+                var mapEntry = currentMap[bestIdx];
+                var ticksPerSec = mapEntry.divisions * bpm / 60;
+                var elapsedTicks = Math.max(0, currentSec - bestT) * ticksPerSec;
+
+                // 2. Localizar nota(s) ativa(s) e a próxima nota
+                var activeNotes = [];
+                var nextNote = null;
+                var currentNoteForTiming = null;
+
+                for (var j = 0; j < mapEntry.notes.length; j++) {
+                    var note = mapEntry.notes[j];
+                    // Ativa se estiver no intervalo [start, start+duration]
+                    if (note.start_time <= elapsedTicks + 0.5 && note.start_time + note.duration > elapsedTicks) {
+                        activeNotes.push(note);
+                        if (!currentNoteForTiming) currentNoteForTiming = note;
+                    }
+                    // A primeira nota que começa depois do tempo atual é a "próxima"
+                    if (note.start_time > elapsedTicks && !nextNote) {
+                        nextNote = note;
+                    }
+                }
+
+                // 3. Se não houver nota ativa, tentar pegar a do próximo compasso
+                if (!nextNote && bestIdx + 1 < currentMap.length) {
+                    var nextMapEntry = currentMap[bestIdx + 1];
+                    if (nextMapEntry.notes.length > 0) nextNote = nextMapEntry.notes[0];
+                }
+
+                // 4. Lógica de Antecipação Adaptativa
+                // Se estamos tocando uma nota, mudamos para a próxima quando atingirmos 85% do tempo dela.
+                // Se estamos em pausa (sem nota ativa), mostramos a próxima imediatamente para preparar.
+                var finalNotes = activeNotes;
+                var displayNote = activeNotes.length ? { note: activeNotes[0], measureNumber: bestM } : null;
+
+                if (currentNoteForTiming) {
+                    var progress = (elapsedTicks - currentNoteForTiming.start_time) / currentNoteForTiming.duration;
+                    if (progress > 0.85 && nextNote) { 
+                        finalNotes = [nextNote];
+                        displayNote = { note: nextNote, measureNumber: bestM }; // antecipa display também
+                    }
+                } else if (nextNote) {
+                    // Durante pausa, já mostra a próxima nota
+                    finalNotes = [nextNote];
+                    displayNote = { note: nextNote, measureNumber: bestM };
+                }
+
+                return { notes: finalNotes, note: displayNote };
+            }
+
+            function updateNoteDisplay(noteInfo) {
+                var mainEl = document.getElementById('noteDisplayMain');
+                if (!mainEl) return;
+                if (!noteInfo) {
+                    mainEl.textContent = '—';
+                    mainEl.classList.remove('active');
+                    return;
+                }
+                var n = noteInfo.note;
+                mainEl.textContent = getNoteNamePt(n.step, n.alter);
+                mainEl.classList.add('active');
             }
 
             /* ─── Range state ─────────────────────────────────────────── */
             var rangeFrom = 1, rangeTo = 1;
             var measureTimeMap = {};
+            var measureTimeArray = [];
             var minMeasureNumber = 1;
             var maxMeasureNumber = 1;
 
             function buildMeasureTimeMap() {
                 measureTimeMap = {};
+                measureTimeArray = [];
+                metronomeAnchorTime = 0;
                 minMeasureNumber = 1;
                 maxMeasureNumber = 1;
                 if (!osmd || !osmd.cursor) return;
@@ -919,7 +1841,11 @@
                                     measureNumber = srcMeasure.MeasureNumber;
                                 }
                             }
-                            measureTimeMap[measureNumber] = real * 4 * beatLen;
+                            if (measureTimeMap[measureNumber] === undefined) {
+                                measureTimeMap[measureNumber] = real * 4 * beatLen;
+                            }
+                            measureTimeArray.push({ index: mIdx, m: measureNumber, t: real * 4 * beatLen });
+
                             if (lastM === -1) minMeasureNumber = measureNumber;
                             maxMeasureNumber = measureNumber;
                             lastM = mIdx;
@@ -927,6 +1853,16 @@
                         it.moveToNext();
                     }
                     osmd.cursor.reset();
+
+                    // Define a âncora do metrônomo (o início do primeiro compasso "cheio")
+                    // Se o primeiro compasso for uma anacruse, o segundo compasso (index 1) será a nossa âncora de batida.
+                    if (measureTimeArray.length > 1) {
+                        // Verifica se o primeiro compasso parece ser uma anacruse (tempo de compasso 2 != múltiplo exato de beatLen)
+                        var firstMeasureDur = measureTimeArray[1].t;
+                        var isAnacrusis = (Math.abs(firstMeasureDur % beatLen) > 0.01);
+                        metronomeAnchorTime = isAnacrusis ? firstMeasureDur : 0;
+                    }
+
                     totalMeasures = maxMeasureNumber;
                 } catch (e) {
                     console.warn('buildMeasureTimeMap error:', e);
@@ -967,6 +1903,7 @@
                     rangeTo = rangeFrom;
                     document.getElementById('rangeTo').value = rangeTo;
                 }
+                if (run) stopPlayback();
             });
             document.getElementById('rangeTo').addEventListener('change', function () {
                 var v = parseInt(this.value, 10) || maxMeasureNumber;
@@ -978,6 +1915,7 @@
                     rangeFrom = rangeTo;
                     document.getElementById('rangeFrom').value = rangeFrom;
                 }
+                if (run) stopPlayback();
             });
 
             /* Variáveis do Scheduler */
@@ -1004,7 +1942,8 @@
                 var title = '', m;
                 m = xml.match(/<work-title>([\s\S]*?)<\/work-title>/);
                 if (!m) m = xml.match(/<movement-title>([\s\S]*?)<\/movement-title>/);
-                if (m) title = m[1].trim();
+                if (!m) m = xml.match(/<credit-words[^>]*font-size="[1-2][\d]"[^>]*>([\s\S]*?)<\/credit-words>/); // Fallback para créditos grandes
+                if (m) title = m[1].replace(/<[^>]*>/g, '').trim();
                 return { title: title };
             }
 
@@ -1125,7 +2064,8 @@
                     var name = 'Part ' + (idx + 1);
                     if (inst.NameLabel && inst.NameLabel.text) name = inst.NameLabel.text;
                     else if (inst.name) name = inst.name;
-                    partConfigs.push({ name: name, program: 'trumpet', vol: 100, oct: 0 });
+                    var currentProg = document.getElementById('instSelect').value || 'trumpet';
+                    partConfigs.push({ name: name, program: currentProg, vol: 100, oct: 0 });
 
                     if (guideSelect) {
                         var opt = document.createElement('option');
@@ -1136,6 +2076,9 @@
                 });
 
                 if (guideWrap) guideWrap.style.display = (parts.length > 1) ? 'flex' : 'none';
+                var sBtn = document.getElementById('btnSolo');
+                if (sBtn) sBtn.style.display = (parts.length > 1) ? 'inline-flex' : 'none';
+
 
                 buildMeasureTimeMap();
                 updateRangeInputs();
@@ -1187,11 +2130,14 @@
             }
 
             function updatePartMix() {
+                var guideIdx = parseInt(document.getElementById('guidePartSelect').value) || 0;
                 partConfigs.forEach(function (cfg, idx) {
                     var finalGain = (cfg.vol || 100) / 100;
+                    if (soloActive && idx !== guideIdx) finalGain = 0;
                     if (partGains[idx]) partGains[idx].gain.setTargetAtTime(finalGain, ac.currentTime, 0.05);
                 });
             }
+
 
             function stopScheduled() {
                 sc.forEach(function (n) { try { n.stop(); } catch (_) { } });
@@ -1207,7 +2153,8 @@
 
             function resetCursorToStart() {
                 clearCursorTimer();
-                updateFingerboard([], true);
+                updateFingerboard([]);
+                updateNoteDisplay(null);
                 if (!osmd || !osmd.cursor) return;
                 try {
                     var mode = +document.getElementById('cursorMode').value;
@@ -1296,46 +2243,39 @@
                 var lastTime = 0;
                 function step(now) {
                     if (!run || !ac || !osmd || !cursorSteps.length) {
-                        updateFingerboard([], true);
+                        updateFingerboard([]);
                         return;
                     }
                     if (now - lastTime >= 60) {
                         lastTime = now;
-                        var current = ac.currentTime - sat;
+                        var current = ac.currentTime - sat - (btDelayMs / 1000);
 
-                                // Se estivermos na fase de contagem (tempo negativo ou anterior ao offset), mantém visual parado
-                                if (current < playbackStartOffset - 0.01) {
-                                    // Não alteramos o visual durante o count-in para preservar a posição anterior se houver
-                                } else {
-                            // Fingerboard Real-time Update
-                            var activeNotes = [];
-                            var gSelect = document.getElementById('guidePartSelect');
-                            var guidePart = gSelect ? parseInt(gSelect.value) : 0;
+                        // Se estivermos na fase de contagem (tempo negativo ou anterior ao offset), mantém visual parado
+                        if (current < playbackStartOffset - 0.01) {
+                            updateFingerboard([]);
+                            updateNoteDisplay(null);
+                        } else {
+                            // Fingerboard Real-time Update — usa parser MusicXML manual como fonte da verdade
+                            // A antecipação agora é interna ao getActiveMidisFromXmlMap (proporcional à nota)
+                            var xmlResult = getActiveMidisFromXmlMap(current);
+                            updateFingerboard(xmlResult.notes);
+                            updateNoteDisplay(xmlResult.note);
+                        }
 
-                            for (var i = 0; i < evs.length; i++) {
-                                var e = evs[i];
-                                if (e.t > current) break;
-                                if (e.t + e.dur > current && e.part === guidePart) {
-                                    activeNotes.push(e.midi);
-                                }
-                            }
-                            updateFingerboard(activeNotes);
-
-                            var curMode = +document.getElementById('cursorMode').value;
-                            if (curMode !== -1) {
-                                while (cursorIndex + 1 < cursorSteps.length && current >= cursorSteps[cursorIndex + 1].t - 0.01) {
-                                    try {
-                                        var targetM = cursorSteps[cursorIndex + 1].m;
-                                        if (curMode === 3) {
-                                            while (!osmd.cursor.Iterator.EndReached && osmd.cursor.Iterator.CurrentMeasureIndex < targetM) {
-                                                osmd.cursor.next();
-                                            }
-                                        } else if (curMode === 0) {
+                        var curMode = +document.getElementById('cursorMode').value;
+                        if (curMode !== -1) {
+                            while (cursorIndex + 1 < cursorSteps.length && current >= cursorSteps[cursorIndex + 1].t - 0.01) {
+                                try {
+                                    var targetM = cursorSteps[cursorIndex + 1].m;
+                                    if (curMode === 3) {
+                                        while (!osmd.cursor.Iterator.EndReached && osmd.cursor.Iterator.CurrentMeasureIndex < targetM) {
                                             osmd.cursor.next();
                                         }
-                                        cursorIndex++;
-                                    } catch (_) { break; }
-                                }
+                                    } else if (curMode === 0) {
+                                        osmd.cursor.next();
+                                    }
+                                    cursorIndex++;
+                                } catch (_) { break; }
                             }
                         }
                     }
@@ -1350,28 +2290,33 @@
                     restartFromBeginningAndPlay();
                 } else {
                     run = false; pat = 0; stopScheduled(); clearCursorTimer(); clearPlaybackEndTimer(); resetCursorToStart();
-                    var bp = document.getElementById('bp');
-                    if (bp) bp.classList.remove('playing');
+                    updatePlayButtonUI(false);
                 }
             }
-            function pausePlayback() {
-                if (!run || !ac) return;
-                run = false; pat = Math.max(0, ac.currentTime - sat);
-                stopScheduled(); clearCursorTimer(); clearPlaybackEndTimer();
-                updateFingerboard([], true);
-                var bp = document.getElementById('bp');
-                if (bp) bp.classList.remove('playing');
+            function updatePlayButtonUI(isRunning) {
+                var bp = document.getElementById('bp'), bpf = document.getElementById('bpFocus');
+                var playIcon = '<svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+                var stopIcon = '<svg class="icon-svg" style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"></rect></svg>';
+                if (bp) {
+                    bp.innerHTML = isRunning ? stopIcon + ' Parar' : playIcon + ' Tocar';
+                    if (isRunning) bp.classList.add('playing'); else bp.classList.remove('playing');
+                }
+                if (bpf) {
+                    bpf.innerHTML = isRunning ? stopIcon : playIcon;
+                    bpf.title = isRunning ? 'Parar' : 'Tocar';
+                    if (isRunning) bpf.classList.add('playing'); else bpf.classList.remove('playing');
+                }
             }
+
             function stopPlayback() {
                 run = false; pat = 0; stopScheduled(); clearCursorTimer(); clearPlaybackEndTimer(); resetCursorToStart();
-                var bp = document.getElementById('bp');
-                if (bp) bp.classList.remove('playing');
+                updatePlayButtonUI(false);
             }
             async function restartFromBeginningAndPlay() {
                 stopPlayback(false);
                 if (!partInsts.length || !ac) return;
                 var startT = getRangeStartTime();
-                run = true; await scheduleFrom(startT); startCursorFollow(startT); pat = 0;
+                run = true; updatePlayButtonUI(true); await scheduleFrom(startT); startCursorFollow(startT); pat = 0;
             }
             function armPlaybackEnd(offset, startDelay) {
                 clearPlaybackEndTimer();
@@ -1459,7 +2404,8 @@
             async function scheduleMetronome(offset) {
                 if (!document.getElementById('metCheck').checked) return;
                 var beatLen = getMetronomeBeatLen();
-                nextMetTime = Math.ceil(offset / beatLen) * beatLen;
+                var anchor = metronomeAnchorTime || 0;
+                nextMetTime = anchor + Math.ceil((offset - anchor) / beatLen) * beatLen;
             }
 
             async function scheduler() {
@@ -1475,9 +2421,8 @@
                         var when = sat + ev.t;
                         if (when >= now) {
                             var partOct = (partConfigs[ev.part] && partConfigs[ev.part].oct) || 0;
-                            var transpSemi = parseInt(document.getElementById('transpSelect').value) || 0;
                             if (partInsts[ev.part] && typeof partInsts[ev.part].play === 'function') {
-                                var n = partInsts[ev.part].play(ev.midi + partOct + transpSemi, when, { duration: ev.dur });
+                                var n = partInsts[ev.part].play(ev.midi + partOct, when, { duration: ev.dur });
                                 if (n) sc.push(n);
                             }
                         }
@@ -1492,7 +2437,10 @@
 
                 if (isMetEnabled || countInVal > 0) {
                     var beatLen = getMetronomeBeatLen();
-                    if (nextMetTime < currentV) nextMetTime = Math.ceil(currentV / beatLen) * beatLen;
+                    var anchor = metronomeAnchorTime || 0;
+                    if (nextMetTime < currentV) {
+                        nextMetTime = anchor + Math.ceil((currentV - anchor) / beatLen) * beatLen;
+                    }
                     while (nextMetTime < lookAheadLimit && nextMetTime < rangeEndT + 0.05) {
                         var whenM = sat + nextMetTime;
                         if (whenM >= now) {
@@ -1552,11 +2500,24 @@
             }
 
             async function afterXmlLoaded() {
-                var detectedBpm = extractTempoFromXml(rawXml);
-                if (detectedBpm) document.getElementById('bpm').value = detectedBpm;
+                originalXmlBpm = extractTempoFromXml(rawXml);
+                if (originalXmlBpm) {
+                    var reduce = document.getElementById('bpmRedCheck').checked;
+                    document.getElementById('bpm').value = reduce ? Math.max(20, originalXmlBpm - 30) : originalXmlBpm;
+                }
 
                 await osmd.load(rawXml);
+
+                // Ajuste de zoom proporcional para mobile no carregamento inicial
+                var zoomEl = document.getElementById('zoomInp');
+                if (window.innerWidth < 768 && zoomEl.value == "100") {
+                    zoomEl.value = "50";
+                }
+                osmd.Zoom = (+zoomEl.value || 100) / 100;
+
                 osmd.render();
+                buildXmlNoteMap(rawXml); // Parser manual MusicXML — constrói mapa de notas do Staff 1
+
                 resetCursorToStart(); extractCursorSteps();
                 if (ac && ac.state !== 'closed') { try { await ac.close(); } catch (_) { } }
                 ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -1565,7 +2526,7 @@
                 updateRangeInputs();
                 sat = 0; pat = 0; run = false; evs = []; sc = []; pieceEnd = 0;
                 clearPlaybackEndTimer();
-                ['bp', 'bpa', 'bs', 'reverbAmt', 'rangeFrom', 'rangeTo', 'countInSelect', 'loopCheck', 'btnExport'].forEach(function (id) {
+                ['bp', 'reverbAmt', 'rangeFrom', 'rangeTo', 'countInSelect', 'loopCheck', 'btnExport'].forEach(function (id) {
                     var el = document.getElementById(id);
                     if (el) el.disabled = false;
                 });
@@ -1583,15 +2544,110 @@
                 } catch (err) { }
             };
 
-            async function loadFromUrl(url) {
+            async function loadFromUrl(url, fallbackName) {
                 try {
-                    var resp = await fetch(url); if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                    rawXml = await resp.text();
+                    var resp = await fetch(url);
+                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+                    // Verifica de forma segura se o link aponta para um .mxl (arquivo compactado ZIP)
+                    if (url.toLowerCase().split('?')[0].endsWith('.mxl')) {
+                        var blob = await resp.blob(); // Pega o arquivo de forma binária
+                        rawXml = await getXmlFromMxl(blob); // O JSZip descompacta o arquivo adequadamente
+                    } else {
+                        rawXml = await resp.text(); // Extração padrão em texto para XML e MusicXML
+                    }
+
                     var meta = extractMetaFromXml(rawXml);
-                    document.getElementById('fname').textContent = meta.title || 'Vitopamos.musicxml';
+                    document.getElementById('fname').textContent = meta.title || fallbackName || 'Partitura importada';
                     await afterXmlLoaded();
-                } catch (err) { }
+                } catch (err) {
+                    console.error('Erro no loadFromUrl:', err);
+                    document.getElementById('fname').textContent = "⚠️ Erro ao carregar partitura";
+                }
             }
+
+            // GitHub Fetch Logic para Hinário
+            async function loadHymnList() {
+                var select = document.getElementById('hymnSelect');
+                try {
+                    var githubApiUrl = 'https://api.github.com/repos/GlauberLASantiago/dedo-de-violinista/contents/Trompetes';
+                    var response = await fetch(githubApiUrl);
+
+                    if (!response.ok) {
+                        if (response.status === 404) throw new Error('Pasta não encontrada (404)');
+                        if (response.status === 403) throw new Error('Limite de acesso excedido (403)');
+                        throw new Error('Erro ' + response.status);
+                    }
+                    var data = await response.json();
+
+                    var hinosEncontrados = 0;
+                    data.forEach(function (file) {
+                        if (file.type === 'file' && (file.name.endsWith('.xml') || file.name.endsWith('.musicxml') || file.name.endsWith('.mxl'))) {
+                            var opt = document.createElement('option');
+                            opt.value = file.download_url; // Link direto do Raw File
+                            // Limpa a extensão para exibição amigável
+                            opt.textContent = file.name.replace(/\.[^/.]+$/, "");
+                            select.appendChild(opt);
+                            hinosEncontrados++;
+                        }
+                    });
+
+                    // Sincroniza as opções com o seletor do Modo Foco
+                    var fSelLoad = document.getElementById('hymnSelectFocus');
+                    if (fSelLoad) {
+                        fSelLoad.innerHTML = '';
+                        for (var ki = 0; ki < select.options.length; ki++) {
+                            fSelLoad.appendChild(select.options[ki].cloneNode(true));
+                        }
+                    }
+
+                    if (hinosEncontrados === 0) {
+                        select.options[0].textContent = "⚠️ Nenhum XML na pasta";
+                    }
+                } catch (e) {
+                    console.warn('Não foi possível carregar a lista de hinos:', e);
+                    select.options[0].textContent = "⚠️ " + e.message;
+                }
+            }
+
+            document.getElementById('hymnSelect').addEventListener('change', async function () {
+                if (!this.value) return;
+                currentHymnIndex = this.selectedIndex;
+                var url = this.value;
+                var name = this.options[this.selectedIndex].text;
+                document.getElementById('fname').textContent = "Carregando " + name + "...";
+                await loadFromUrl(url, name);
+                this.value = ""; // Retorna para o placeholder
+                // Sincroniza o seletor do Modo Foco
+                var fSelChg = document.getElementById('hymnSelectFocus');
+                if (fSelChg) fSelChg.value = "";
+            });
+
+            // Seletor de hinos do Modo Foco — delega para o seletor principal
+            document.getElementById('hymnSelectFocus').addEventListener('change', function () {
+                if (!this.value) return;
+                var mainSel = document.getElementById('hymnSelect');
+                mainSel.value = this.value;
+                mainSel.dispatchEvent(new Event('change'));
+            });
+
+            document.getElementById('btnNextHymn').onclick = function () {
+                var select = document.getElementById('hymnSelect');
+                if (select.options.length <= 1) return;
+                var next = currentHymnIndex + 1;
+                if (next >= select.options.length) next = 1; // Loop para o primeiro hino
+                select.selectedIndex = next;
+                select.dispatchEvent(new Event('change'));
+            };
+
+            document.getElementById('btnPrevHymn').onclick = function () {
+                var select = document.getElementById('hymnSelect');
+                if (select.options.length <= 1) return;
+                var prev = currentHymnIndex - 1;
+                if (prev <= 0) prev = select.options.length - 1; // Loop para o último hino
+                select.selectedIndex = prev;
+                select.dispatchEvent(new Event('change'));
+            };
 
             // Captura o código fonte inicial para exportação (pode falhar em file://)
             fetch(window.location.href).then(function (r) { return r.text(); }).then(function (t) { appSource = t; }).catch(function () { });
@@ -1608,7 +2664,7 @@
                     source = "<!DOCTYPE html>\n" + docClone.outerHTML;
                 }
 
-                var fileName = (document.getElementById('fname').textContent || 'dedo-de-violinista').replace(/\s+/g, '_') + '.html';
+                var fileName = (document.getElementById('fname').textContent || 'dedo-de-trompetista').replace(/\s+/g, '_') + '.html';
 
                 // Injeta o XML no lugar do placeholder ou no primeiro script
                 var scriptToInject = 'var EMBEDDED_XML = ' + JSON.stringify(rawXml) + ';';
@@ -1632,19 +2688,52 @@
                 rawXml = EMBEDDED_XML;
                 afterXmlLoaded();
             } else {
-                loadFromUrl('https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-violinista/main/exemplo.musicxml');
+                // Tenta carregar partitura inicial de trompete; se não existir, aguarda o usuário carregar uma
+                loadFromUrl('https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-violinista/main/Trompetes/001_1%C2%AAM_ad_Trp.mxl').catch(function () {
+                    // Sem partitura padrão ainda — o usuário pode carregar via arquivo ou HNC
+                });
             }
 
-            document.getElementById('bp').onclick = async function () {
-                if (run || !partInsts.length || !ac) return;
-                run = true;
-                this.classList.add('playing');
-                var startT = getRangeStartTime();
-                await scheduleFrom(startT); startCursorFollow(startT); pat = 0;
+            // Inicia a requisição da lista do Hinário assim que o app carregar
+            loadHymnList();
+
+            /* ─── Lógica de ocultar auxílios ─── */
+            var aidsHidden = localStorage.getItem('visualAidsHidden') === 'true';
+            if (aidsHidden) {
+                document.body.classList.add('hide-visual-aids');
+                updateAidsButton(true);
+            }
+
+            function updateAidsButton(isHidden) {
+                var showIcon = document.getElementById('aidsIconShow');
+                var hideIcon = document.getElementById('aidsIconHide');
+                if (isHidden) {
+                    showIcon.style.display = 'none';
+                    hideIcon.style.display = 'block';
+                } else {
+                    showIcon.style.display = 'block';
+                    hideIcon.style.display = 'none';
+                }
+            }
+
+            document.getElementById('btnToggleAids').onclick = function () {
+                var isHidden = document.body.classList.toggle('hide-visual-aids');
+                localStorage.setItem('visualAidsHidden', isHidden);
+                updateAidsButton(isHidden);
             };
 
-            document.getElementById('bpa').onclick = function () { pausePlayback(); };
-            document.getElementById('bs').onclick = function () { stopPlayback(true); };
+            document.getElementById('bp').onclick = async function () {
+                if (!partInsts.length || !ac) return;
+                if (run) {
+                    stopPlayback();
+                } else {
+                    run = true;
+                    updatePlayButtonUI(true);
+                    var startT = getRangeStartTime();
+                    await scheduleFrom(startT); startCursorFollow(startT); pat = 0;
+                }
+            };
+
             document.getElementById('reverbAmt').oninput = function () { updateReverb(); };
 
             document.getElementById('zoomInp').onchange = function () {
@@ -1654,12 +2743,15 @@
 
             document.getElementById('bpm').onchange = function () {
                 if (!rawXml) return;
+                if (run) stopPlayback();
                 buildMeasureTimeMap();
-                if (run && ac) {
-                    var currentOffset = Math.max(0, ac.currentTime - sat);
-                    stopScheduled(); clearCursorTimer(); clearPlaybackEndTimer();
-                    scheduleFrom(currentOffset).then(function () { startCursorFollow(currentOffset); });
-                } else moveCursorToTime(pat || 0);
+            };
+
+            document.getElementById('bpmRedCheck').onchange = function () {
+                if (!rawXml || !originalXmlBpm) return;
+                var reduce = this.checked;
+                document.getElementById('bpm').value = reduce ? Math.max(20, originalXmlBpm - 30) : originalXmlBpm;
+                document.getElementById('bpm').dispatchEvent(new Event('change'));
             };
 
             document.getElementById('cursorMode').onchange = function () {
@@ -1673,8 +2765,17 @@
                 moveCursorToTime(run ? Math.max(0, ac.currentTime - sat) : (pat || 0));
             };
 
+            document.getElementById('instSelect').onchange = function () {
+                if (run) stopPlayback();
+                var newProg = this.value;
+                partConfigs.forEach(function (cfg) { cfg.program = newProg; });
+                loadAllInstruments();
+            };
+
             document.getElementById('guidePartSelect').onchange = function () {
+                updatePartMix();
                 if (!rawXml || run) return;
+
                 var current = pat || getRangeStartTime();
                 var activeNotes = [];
                 var guidePart = parseInt(this.value);
@@ -1688,26 +2789,86 @@
                 updateFingerboard(activeNotes);
             };
 
-            document.getElementById('score').addEventListener('click', function (ev) {
-                if (!rawXml) return;
-                if (scoreClickTimer) clearTimeout(scoreClickTimer);
-                var detail = ev.detail;
-                scoreClickTimer = setTimeout(async function () {
-                    scoreClickTimer = null;
-                    if (detail >= 3) { await restartFromBeginningAndPlay(); return; }
-                    if (detail === 2) { stopPlayback(true); return; }
-                    if (run) { pausePlayback(); }
-                    else if (partInsts.length && ac) {
-                        run = true;
-                        document.getElementById('bp').classList.add('playing');
-                        var startT = pat || getRangeStartTime();
-                        await scheduleFrom(startT); startCursorFollow(startT); pat = 0;
+
+
+            /* ─── Modo Foco ─── */
+            function toggleFocusMode() {
+                var isFocus = document.body.classList.toggle('focus-mode');
+                if (rawXml) {
+                    var currentZoom = +document.getElementById('zoomInp').value || 100;
+
+                    if (isFocus) {
+                        if (window.innerWidth < 768) {
+                            osmd.Zoom = 0.5; // Força 50% no foco mobile
+                        } else if (currentZoom < 120) {
+                            osmd.Zoom = 1.25; // Comportamento desktop
+                        } else {
+                            osmd.Zoom = currentZoom / 100;
+                        }
+                    } else {
+                        osmd.Zoom = currentZoom / 100;
                     }
-                }, 250);
-            });
+
+                    setTimeout(function () {
+                        osmd.render();
+                    }, 100);
+                }
+            }
+
+            document.getElementById('btnFocus').onclick = toggleFocusMode;
+            document.getElementById('btnExitFocus').onclick = toggleFocusMode;
+
+            document.getElementById('btnSolo').onclick = function () {
+                soloActive = !soloActive;
+                this.classList.toggle('active', soloActive);
+                updatePartMix();
+            };
+
+            /* ─── Painel Bluetooth ─── */
+            (function () {
+                var panel = document.getElementById('btDelayPanel');
+                var btn = document.getElementById('btnBluetooth');
+                var slider = document.getElementById('btDelaySlider');
+                var valueLabel = document.getElementById('btDelayValue');
+
+                function updateSliderTrack() {
+                    var pct = (slider.value / slider.max) * 100;
+                    slider.style.setProperty('--pct', pct + '%');
+                }
+
+                btn.onclick = function () {
+                    var isOpen = panel.classList.toggle('visible');
+                    btn.classList.toggle('active', isOpen);
+                };
+
+                slider.oninput = function () {
+                    btDelayMs = parseInt(this.value);
+                    valueLabel.textContent = btDelayMs + ' ms';
+                    updateSliderTrack();
+                    try { localStorage.setItem('btDelayMs', btDelayMs); } catch (_) { }
+                };
+
+                // Restaurar valor salvo
+                try {
+                    var saved = localStorage.getItem('btDelayMs');
+                    if (saved !== null) {
+                        btDelayMs = parseInt(saved) || 0;
+                        slider.value = btDelayMs;
+                        valueLabel.textContent = btDelayMs + ' ms';
+                    }
+                } catch (_) { }
+                updateSliderTrack();
+            })();
+
 
         })();
     </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+
 </body>
 
 </html>
