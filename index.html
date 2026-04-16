@@ -918,40 +918,23 @@
                 justify-content: center;
             }
 
-            /* Painel de pistões na largura total com escala para caber no celular */
+            /* Painel de pistões na largura total */
             .valves-panel {
                 width: 100%;
                 max-width: none !important;
-                padding-bottom: 0;
-                height: 160px; /* Reduzido conforme a escala */
-                transform: scale(0.55);
-                transform-origin: center center;
-                margin: -20px 0; /* Compensa o espaço extra da escala */
+                padding-bottom: 30px;
+                height: var(--scene-h);
             }
 
             .fb-layout-wrap {
                 padding: 0;
-                margin: 0 auto 10px;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                overflow: hidden;
+                margin: 0 -12px 10px -12px;
+                /* Compensa o padding da .body */
+                width: calc(100% + 24px);
             }
 
             .fb-layout-wrap .note-display {
-                position: relative;
-                right: auto;
-                top: auto;
-                transform: none;
-                margin: 5px auto 15px;
-                width: 70px;
-                height: 70px;
-                font-size: 20px;
-            }
-            
-            .fb-layout-wrap .note-display-main {
-                font-size: 30px;
+                margin-left: 5px;
             }
 
             #score {
