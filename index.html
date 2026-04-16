@@ -448,19 +448,23 @@
             align-items: center;
             width: var(--casing-w);
             position: relative;
+            /* Garante que o container permite camadas independentes */
         }
 
-        /* A parte que desce */
-        .valve-piston {
+        /* Classe para componentes que se movem com a pressão (pistão) */
+        .valve-moving {
+            position: relative;
+            transition: none; /* Instantâneo conforme solicitado anteriormente */
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
-            z-index: 3;
-            margin-bottom: -5px;
         }
 
-        /* O botão (pearl/silver) */
+        .pressed .valve-moving {
+            transform: translateY(var(--press-dist));
+        }
+
+        /* O botão (pearl/silver) - Agora solicitado para ficar atrás também */
         .valve-button {
             width: var(--btn-w);
             height: var(--btn-h);
@@ -469,6 +473,7 @@
             border: 2px solid #64748b;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 2px 3px rgba(255, 255, 255, 0.8);
             position: relative;
+            z-index: 4;
         }
 
         /* O pequeno topo serrilhado */
@@ -485,16 +490,19 @@
             border-radius: 2px;
         }
 
-        /* A haste (stem) */
+        /* A haste (stem) - Camada de Fundo (entra no tubo) */
         .valve-stem {
             width: var(--stem-w);
             height: var(--stem-h);
             background: linear-gradient(to right, #94a3b8, #f8fafc, #64748b);
             border-left: 1px solid #475569;
             border-right: 1px solid #475569;
+            position: relative;
+            z-index: 1;
+            margin-bottom: -5px; /* Puxa o casing para cima do stem */
         }
 
-        /* O invólucro (casing) vertical */
+        /* O invólucro (casing) vertical - Camada Intermediária */
         .valve-casing {
             width: var(--casing-w);
             height: var(--casing-h);
@@ -502,10 +510,12 @@
             border: 2px solid #92400e;
             border-radius: 4px;
             position: relative;
+            z-index: 5;
             box-shadow: 4px 6px 12px rgba(0, 0, 0, 0.3), inset 1px 0 2px rgba(255, 255, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-top: -1px;
         }
 
         .casing-number {
@@ -524,14 +534,12 @@
             border: 1px solid #475569;
             border-radius: 4px;
             margin-top: -2px;
-            z-index: 4;
+            z-index: 10;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
         }
 
         /* Estado pressionado */
-        .valve-container.pressed .valve-piston {
-            transform: translateY(var(--press-dist));
-        }
+        /* .valve-piston foi substituído por .valve-moving */
 
 
         .valve-label {
@@ -1459,10 +1467,8 @@
                         <div class="valve-group">
 
                             <div class="valve-container" id="valve1">
-                                <div class="valve-piston">
-                                    <div class="valve-button"></div>
-                                    <div class="valve-stem"></div>
-                                </div>
+                                <div class="valve-button valve-moving"></div>
+                                <div class="valve-stem valve-moving"></div>
                                 <div class="valve-casing-top"></div>
                                 <div class="valve-casing">
                                     <div class="casing-number">1</div>
@@ -1470,10 +1476,8 @@
                             </div>
 
                             <div class="valve-container" id="valve2">
-                                <div class="valve-piston">
-                                    <div class="valve-button"></div>
-                                    <div class="valve-stem"></div>
-                                </div>
+                                <div class="valve-button valve-moving"></div>
+                                <div class="valve-stem valve-moving"></div>
                                 <div class="valve-casing-top"></div>
                                 <div class="valve-casing">
                                     <div class="casing-number">2</div>
@@ -1481,10 +1485,8 @@
                             </div>
 
                             <div class="valve-container" id="valve3">
-                                <div class="valve-piston">
-                                    <div class="valve-button"></div>
-                                    <div class="valve-stem"></div>
-                                </div>
+                                <div class="valve-button valve-moving"></div>
+                                <div class="valve-stem valve-moving"></div>
                                 <div class="valve-casing-top"></div>
                                 <div class="valve-casing">
                                     <div class="casing-number">3</div>
