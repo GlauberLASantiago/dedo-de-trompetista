@@ -1140,7 +1140,7 @@
                         <div class="hymn-wrap" style="position: relative;">
                             <select id="hymnSelectFocus" class="load-btn btn-hymn"
                                 style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
-                                <option value="">📖 Bb...</option>
+                                <option value="">📖 HNC Bb</option>
                             </select>
                             <svg class="icon-svg"
                                 style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
@@ -1215,7 +1215,7 @@
                 <div class="hymn-wrap" style="position: relative;">
                     <select id="hymnSelect" class="load-btn btn-hymn"
                         style="appearance: none; padding: 0 28px 0 12px; width: 100px; border: none; outline: none; cursor: pointer;">
-                        <option value="">📖 Bb...</option>
+                        <option value="">📖HNC Bb</option>
                     </select>
                     <svg class="icon-svg"
                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; width: 14px; height: 14px; color: #fff;"
@@ -2669,7 +2669,7 @@
                 var name = this.options[this.selectedIndex].text;
                 document.getElementById('fname').textContent = "Carregando " + name + "...";
                 await loadFromUrl(url, name);
-                
+
                 // Auto-detect Sib (Bb) for files from the 'Instrumentos Bb' library
                 var kSel = document.getElementById('keySelect');
                 if (kSel) {
@@ -2942,7 +2942,7 @@
                     var defaultUrl = 'https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-trompetista/main/Instrumentos-Bb/001_1%C2%AAM_ad.mxl';
                     document.getElementById('fname').textContent = "Carregando padrão...";
                     loadFromUrl(defaultUrl, "001_1ªM_ad");
-                    
+
                     // Como é da pasta Bb, força afinação Sib
                     globalTranspose = -2;
                     if (kSel) kSel.value = "-2";
