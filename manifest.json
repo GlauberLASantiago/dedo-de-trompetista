@@ -1,0 +1,26 @@
+{
+  "name": "Dedo de trompetista",
+  "short_name": "Dedo 🎺",
+  "description": "Visualizador e reprodutor de partituras com guia de pistões para trompete",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eaddc5",
+  "theme_color": "#4a3b2c",
+  "orientation": "any",
+  "scope": "./",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
