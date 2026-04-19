@@ -2,7 +2,8 @@
 
 **Visualizador Interativo de Partituras com Guia de Pistões para Trompete**
 
-Um Progressive Web App (PWA) que exibe partituras no formato MusicXML, reproduz o áudio e mostra em tempo real quais pistões pressionar no trompete — funciona direto no navegador, sem instalação, e pode ser usado offline.
+Um App que exibe partituras no formato MusicXML, reproduz o áudio e mostra em tempo real quais pistões pressionar no trompete — funciona direto no navegador, sem instalação, e pode ser usado offline.
+<img width="1685" height="902" alt="image" src="https://github.com/user-attachments/assets/8992ca9b-1647-47ed-983e-82bd44799de4" />
 
 ---
 
