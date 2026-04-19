@@ -3,6 +3,7 @@
 **Visualizador Interativo de Partituras com Guia de Pistões para Trompete**
 
 Um App que exibe partituras no formato MusicXML, reproduz o áudio e mostra em tempo real quais pistões pressionar no trompete — funciona direto no navegador, sem instalação.
+
 <img width="1685" height="902" alt="image" src="https://github.com/user-attachments/assets/8992ca9b-1647-47ed-983e-82bd44799de4" />
 
 ---
