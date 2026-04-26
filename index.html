@@ -1261,6 +1261,12 @@
                     <input type="checkbox" id="loopCheck" checked>
                 </div>
 
+                <!-- Pular Pausas -->
+                <div class="met-wrap">
+                    <label for="skipRestsCheck" title="Pular pausas de múltiplos compassos">Pular Pausas</label>
+                    <input type="checkbox" id="skipRestsCheck" checked>
+                </div>
+
                 <!-- Cursor -->
                 <div class="cursor-wrap">
                     <label for="cursorMode">Cursor</label>
@@ -1574,6 +1580,37 @@
             var cursorStepsCache = { bpm: null, xml: null, mode: 3 };
             var totalMeasures = 0, playbackStartOffset = 0;
             var xmlNoteMap = {};
+            var emptyMeasures = [];
+            var skipMeasuresList = [];
+
+            function calculateSkipMap() {
+                skipMeasuresList = [];
+                var skipEnabled = document.getElementById('skipRestsCheck') && document.getElementById('skipRestsCheck').checked;
+                if (!skipEnabled) return;
+
+                for (var i = 0; i < emptyMeasures.length; i++) {
+                    if (emptyMeasures[i]) {
+                        var mStartObj = measureTimeArray.find(function(m) { return m.index === i; });
+                        var mEndObj = measureTimeArray.find(function(m) { return m.index === i + 1; });
+                        var mStart = mStartObj ? mStartObj.t : 0;
+                        var mEnd = mEndObj ? mEndObj.t : (mStartObj ? mStartObj.t + (60 / (+document.getElementById('bpm').value || 100)) * 4 : 0);
+                        if (mStartObj) {
+                            var duration = mEnd - mStart;
+                            if (duration > 0) skipMeasuresList.push({ start: mStart, end: mEnd, duration: duration });
+                        }
+                    }
+                }
+            }
+
+            function getAdjustedTime(t) {
+                var adj = t;
+                for (var i = 0; i < skipMeasuresList.length; i++) {
+                    var sm = skipMeasuresList[i];
+                    if (t >= sm.end) adj -= sm.duration;
+                    else if (t > sm.start) adj -= (t - sm.start);
+                }
+                return adj;
+            }
 
             var originalXmlBpm = null;
             var currentHymnIndex = 0;
@@ -1858,6 +1895,7 @@
             function buildMeasureTimeMap() {
                 measureTimeMap = {};
                 measureTimeArray = [];
+                emptyMeasures = [];
                 metronomeAnchorTime = 0;
                 minMeasureNumber = 1;
                 maxMeasureNumber = 1;
@@ -1878,6 +1916,11 @@
                                 var srcMeasure = osmd.Sheet.SourceMeasures[mIdx];
                                 if (srcMeasure && srcMeasure.MeasureNumber !== undefined) {
                                     measureNumber = srcMeasure.MeasureNumber;
+                                }
+                                if (srcMeasure && srcMeasure.multipleRestMeasureNumber > 1) {
+                                    emptyMeasures[mIdx] = true;
+                                } else {
+                                    emptyMeasures[mIdx] = false;
                                 }
                             }
                             if (measureTimeMap[measureNumber] === undefined) {
@@ -1903,6 +1946,17 @@
                     }
 
                     totalMeasures = maxMeasureNumber;
+
+                    calculateSkipMap();
+                    for (var mNum in measureTimeMap) {
+                        if (measureTimeMap.hasOwnProperty(mNum)) {
+                            measureTimeMap[mNum] = getAdjustedTime(measureTimeMap[mNum]);
+                        }
+                    }
+                    for (var i = 0; i < measureTimeArray.length; i++) {
+                        measureTimeArray[i].t = getAdjustedTime(measureTimeArray[i].t);
+                    }
+                    metronomeAnchorTime = getAdjustedTime(metronomeAnchorTime);
                 } catch (e) {
                     console.warn('buildMeasureTimeMap error:', e);
                 }
@@ -2242,7 +2296,8 @@
                                     measureNumber = srcMeasure.MeasureNumber;
                                 }
                             }
-                            cursorSteps.push({ t: real * 4 * (60 / bpm), m: mIdx, measureNumber: measureNumber });
+                            var tSecAdj = getAdjustedTime(real * 4 * (60 / bpm));
+                            cursorSteps.push({ t: tSecAdj, m: mIdx, measureNumber: measureNumber });
                             lastM = mIdx;
                         }
                         iterator.moveToNext();
@@ -2410,7 +2465,7 @@
                     var voices = iterator.CurrentVoiceEntries || [];
                     var timeObj = iterator.currentTimeStamp || iterator.CurrentTimeStamp;
                     var real = timeObj ? (typeof timeObj.realValue !== 'undefined' ? timeObj.realValue : (timeObj.RealValue || 0)) : 0;
-                    var tSec = real * 4 * beatLen;
+                    var tSec = getAdjustedTime(real * 4 * beatLen);
                     for (var i = 0; i < voices.length; i++) {
                         var ve = voices[i]; if (!ve || !ve.Notes) continue;
                         var partIdx = 0;
@@ -2703,15 +2758,45 @@
 
             function exportHtml() {
                 if (!rawXml) return;
-                var source = appSource;
-                if (!source) {
-                    // Fallback para quando o fetch é bloqueado (uso local): reconstrói a partir do DOM atual
-                    var docClone = document.documentElement.cloneNode(true);
-                    var sDiv = docClone.querySelector('#score');
-                    if (sDiv) sDiv.innerHTML = ''; // Limpa os SVGs pesados gerados pelo OSMD
-                    docClone.querySelectorAll('.playing').forEach(function (el) { el.classList.remove('playing'); });
-                    source = "<!DOCTYPE html>\n" + docClone.outerHTML;
+                
+                // Reconstrói a partir do DOM atual para capturar o estado atual da interface
+                var docClone = document.documentElement.cloneNode(true);
+                var sDiv = docClone.querySelector('#score');
+                if (sDiv) sDiv.innerHTML = ''; // Limpa os SVGs pesados gerados pelo OSMD
+                docClone.querySelectorAll('.playing').forEach(function (el) { el.classList.remove('playing'); });
+
+                // Salvar opções no HTML
+                var origCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+                var cloneCheckboxes = docClone.querySelectorAll('input[type="checkbox"]');
+                for (var i = 0; i < origCheckboxes.length; i++) {
+                    if (origCheckboxes[i].checked) cloneCheckboxes[i].setAttribute('checked', 'checked');
+                    else cloneCheckboxes[i].removeAttribute('checked');
                 }
+                
+                var origSelects = document.querySelectorAll('select');
+                var cloneSelects = docClone.querySelectorAll('select');
+                for (var i = 0; i < origSelects.length; i++) {
+                    var cloneOpts = cloneSelects[i].options;
+                    for (var j = 0; j < cloneOpts.length; j++) {
+                        if (cloneOpts[j].value === origSelects[i].value) cloneOpts[j].setAttribute('selected', 'selected');
+                        else cloneOpts[j].removeAttribute('selected');
+                    }
+                }
+                
+                var origNumbers = document.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
+                var cloneNumbers = docClone.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
+                for (var i = 0; i < origNumbers.length; i++) {
+                    if (origNumbers[i].id === 'btDelaySlider') {
+                        cloneNumbers[i].setAttribute('value', '0');
+                    } else {
+                        cloneNumbers[i].setAttribute('value', origNumbers[i].value);
+                    }
+                }
+                
+                var cloneBtVal = docClone.querySelector('#btDelayValue');
+                if (cloneBtVal) cloneBtVal.textContent = '0 ms';
+
+                var source = "<!DOCTYPE html>\n" + docClone.outerHTML;
 
                 var fileName = (document.getElementById('fname').textContent || 'dedo-de-trompetista').replace(/\s+/g, '_') + '.html';
 
