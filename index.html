@@ -736,19 +736,27 @@
 
         #btnToggleAids,
         #btnSolo,
-        #btnFocus {
+        #btnFocus,
+        #btnBluetooth {
             background-color: #57534e;
             color: #fff;
         }
 
         #btnToggleAids:hover,
         #btnSolo:hover,
-        #btnFocus:hover {
+        #btnFocus:hover,
+        #btnBluetooth:hover {
             background-color: #44403c;
         }
 
         #btnSolo.active {
             background-color: #f59e0b !important;
+            color: #fff !important;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #btnBluetooth.active-bt {
+            background-color: #3b82f6 !important;
             color: #fff !important;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
@@ -1577,7 +1585,7 @@
             var inputGain = null, masterGain = null, dryGain = null, wetGain = null, convolver = null;
             var playbackEndTimer = null, pieceEnd = 0;
             var scoreClickTimer = null;
-            var cursorStepsCache = { bpm: null, xml: null, mode: 3 };
+            var cursorStepsCache = { bpm: null, xml: null, mode: 3, skip: null };
             var totalMeasures = 0, playbackStartOffset = 0;
             var xmlNoteMap = {};
             var emptyMeasures = [];
@@ -1590,8 +1598,8 @@
 
                 for (var i = 0; i < emptyMeasures.length; i++) {
                     if (emptyMeasures[i]) {
-                        var mStartObj = measureTimeArray.find(function(m) { return m.index === i; });
-                        var mEndObj = measureTimeArray.find(function(m) { return m.index === i + 1; });
+                        var mStartObj = measureTimeArray.find(function (m) { return m.index === i; });
+                        var mEndObj = measureTimeArray.find(function (m) { return m.index === i + 1; });
                         var mStart = mStartObj ? mStartObj.t : 0;
                         var mEnd = mEndObj ? mEndObj.t : (mStartObj ? mStartObj.t + (60 / (+document.getElementById('bpm').value || 100)) * 4 : 0);
                         if (mStartObj) {
@@ -1815,7 +1823,7 @@
                 for (var i = 0; i < measureTimeArray.length; i++) {
                     var mt = measureTimeArray[i];
                     if (!mt) continue;
-                    if (mt.t <= currentSec + 0.01 && mt.t > bestT) {
+                    if (mt.t <= currentSec + 0.01 && mt.t >= bestT) {
                         bestT = mt.t;
                         bestIdx = mt.index;
                         bestM = mt.m;
@@ -1823,7 +1831,16 @@
                 }
                 if (bestIdx === -1) return { notes: [], note: null };
 
-                var mapEntry = currentMap[bestIdx];
+                var mapEntry = null;
+                for (var k = 0; k < currentMap.length; k++) {
+                    if (currentMap[k].measureNumber === bestM) {
+                        mapEntry = currentMap[k];
+                        break;
+                    }
+                }
+                if (!mapEntry) mapEntry = currentMap[bestIdx];
+                if (!mapEntry) return { notes: [], note: null };
+
                 var ticksPerSec = mapEntry.divisions * bpm / 60;
                 var elapsedTicks = Math.max(0, currentSec - bestT) * ticksPerSec;
 
@@ -2276,8 +2293,9 @@
                 if (!osmd || !osmd.cursor) return;
                 var bpm = +document.getElementById('bpm').value || 100;
                 var mode = +document.getElementById('cursorMode').value;
+                var skipEnabled = document.getElementById('skipRestsCheck') && document.getElementById('skipRestsCheck').checked;
                 if (mode === -1) { cursorSteps = []; return; }
-                if (cursorStepsCache.bpm === bpm && cursorStepsCache.xml === rawXml && cursorStepsCache.mode === mode && cursorSteps.length > 0) return;
+                if (cursorStepsCache.bpm === bpm && cursorStepsCache.xml === rawXml && cursorStepsCache.mode === mode && cursorStepsCache.skip === skipEnabled && cursorSteps.length > 0) return;
                 cursorSteps = [];
                 try {
                     osmd.cursor.reset();
@@ -2303,7 +2321,7 @@
                         iterator.moveToNext();
                     }
                     osmd.cursor.reset();
-                    cursorStepsCache.bpm = bpm; cursorStepsCache.xml = rawXml; cursorStepsCache.mode = mode;
+                    cursorStepsCache.bpm = bpm; cursorStepsCache.xml = rawXml; cursorStepsCache.mode = mode; cursorStepsCache.skip = skipEnabled;
                 } catch (_) { }
             }
 
@@ -2758,7 +2776,7 @@
 
             function exportHtml() {
                 if (!rawXml) return;
-                
+
                 // Reconstrói a partir do DOM atual para capturar o estado atual da interface
                 var docClone = document.documentElement.cloneNode(true);
                 var sDiv = docClone.querySelector('#score');
@@ -2772,7 +2790,7 @@
                     if (origCheckboxes[i].checked) cloneCheckboxes[i].setAttribute('checked', 'checked');
                     else cloneCheckboxes[i].removeAttribute('checked');
                 }
-                
+
                 var origSelects = document.querySelectorAll('select');
                 var cloneSelects = docClone.querySelectorAll('select');
                 for (var i = 0; i < origSelects.length; i++) {
@@ -2782,7 +2800,7 @@
                         else cloneOpts[j].removeAttribute('selected');
                     }
                 }
-                
+
                 var origNumbers = document.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
                 var cloneNumbers = docClone.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
                 for (var i = 0; i < origNumbers.length; i++) {
@@ -2792,7 +2810,7 @@
                         cloneNumbers[i].setAttribute('value', origNumbers[i].value);
                     }
                 }
-                
+
                 var cloneBtVal = docClone.querySelector('#btDelayValue');
                 if (cloneBtVal) cloneBtVal.textContent = '0 ms';
 
@@ -2880,6 +2898,15 @@
                 if (run) stopPlayback();
                 buildMeasureTimeMap();
             };
+
+            var skipCheckEl = document.getElementById('skipRestsCheck');
+            if (skipCheckEl) {
+                skipCheckEl.onchange = function () {
+                    if (!rawXml) return;
+                    if (run) stopPlayback();
+                    buildMeasureTimeMap();
+                };
+            }
 
             document.getElementById('bpmRedCheck').onchange = function () {
                 if (!rawXml || !originalXmlBpm) return;
@@ -2970,6 +2997,14 @@
                     slider.style.setProperty('--pct', pct + '%');
                 }
 
+                function updateBtButtonColor() {
+                    if (btDelayMs > 0) {
+                        btn.classList.add('active-bt');
+                    } else {
+                        btn.classList.remove('active-bt');
+                    }
+                }
+
                 btn.onclick = function () {
                     var isOpen = panel.classList.toggle('visible');
                     btn.classList.toggle('active', isOpen);
@@ -2979,6 +3014,7 @@
                     btDelayMs = parseInt(this.value);
                     valueLabel.textContent = btDelayMs + ' ms';
                     updateSliderTrack();
+                    updateBtButtonColor();
                     try { localStorage.setItem('btDelayMs', btDelayMs); } catch (_) { }
                 };
 
@@ -2992,6 +3028,7 @@
                     }
                 } catch (_) { }
                 updateSliderTrack();
+                updateBtButtonColor();
 
                 // Controle de Afinação (Transposição)
                 var kSel = document.getElementById('keySelect');
