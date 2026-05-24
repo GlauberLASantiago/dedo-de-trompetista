@@ -1577,6 +1577,8 @@
 
             /* ─── Estado global ──────────────────────────────────────────────── */
             var EMBEDDED_XML = ``; // @EMBEDDED_XML_PLACEHOLDER@
+            var EMBEDDED_STATE = null; // @EMBEDDED_STATE_PLACEHOLDER@
+            var hasState = false;
             var partInsts = [], partConfigs = [], partGains = [];
             var evs = [], ac = null, sc = [], sat = 0, pat = 0, run = false, rawXml = '', appSource = '';
             var drumPlayer = new WebAudioFontPlayer();
@@ -1591,20 +1593,220 @@
             var emptyMeasures = [];
             var skipMeasuresList = [];
 
+            // Novas variáveis para a linha do tempo bruta
+            var rawMeasureTimeMap = {};
+            var rawMeasureTimeArray = [];
+            var rawEvs = [];
+            var rawPieceEnd = 0;
+
+            // Funções auxiliares de Bluetooth
+            function updateBtSliderTrack() {
+                var slider = document.getElementById('btDelaySlider');
+                if (slider) {
+                    var pct = (slider.value / slider.max) * 100;
+                    slider.style.setProperty('--pct', pct + '%');
+                }
+            }
+
+            function updateBtButtonColor() {
+                var btn = document.getElementById('btnBluetooth');
+                if (btn) {
+                    if (btDelayMs > 0) {
+                        btn.classList.add('active-bt');
+                    } else {
+                        btn.classList.remove('active-bt');
+                    }
+                }
+            }
+
+            function updateBtDelayUI() {
+                var slider = document.getElementById('btDelaySlider');
+                var valueLabel = document.getElementById('btDelayValue');
+                if (slider) slider.value = btDelayMs;
+                if (valueLabel) valueLabel.textContent = btDelayMs + ' ms';
+                updateBtSliderTrack();
+                updateBtButtonColor();
+            }
+
+            function restoreState(state) {
+                if (!state) return;
+                if (state.bpm !== undefined) {
+                    document.getElementById('bpm').value = state.bpm;
+                }
+                if (state.reduce30 !== undefined) {
+                    document.getElementById('bpmRedCheck').checked = state.reduce30;
+                }
+                if (state.countIn !== undefined) {
+                    document.getElementById('countInSelect').value = state.countIn;
+                }
+                if (state.metronome !== undefined) {
+                    document.getElementById('metCheck').checked = state.metronome;
+                }
+                if (state.skipRests !== undefined) {
+                    document.getElementById('skipRestsCheck').checked = state.skipRests;
+                }
+                if (state.loop !== undefined) {
+                    document.getElementById('loopCheck').checked = state.loop;
+                }
+                if (state.cursorMode !== undefined) {
+                    document.getElementById('cursorMode').value = state.cursorMode;
+                }
+                if (state.zoom !== undefined) {
+                    document.getElementById('zoomInp').value = state.zoom;
+                }
+                if (state.reverb !== undefined) {
+                    document.getElementById('reverbAmt').value = state.reverb;
+                }
+                if (state.sound !== undefined) {
+                    document.getElementById('instSelect').value = state.sound;
+                }
+                if (state.btDelayMs !== undefined) {
+                    btDelayMs = state.btDelayMs;
+                    updateBtDelayUI();
+                    try { localStorage.setItem('btDelayMs', btDelayMs); } catch (_) {}
+                }
+                if (state.trumpetKey !== undefined) {
+                    globalTranspose = state.trumpetKey;
+                    document.getElementById('keySelect').value = globalTranspose;
+                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) {}
+                }
+            }
+
+            function buildRawMeasureTimeMap() {
+                rawMeasureTimeMap = {};
+                rawMeasureTimeArray = [];
+                emptyMeasures = [];
+                minMeasureNumber = 1;
+                maxMeasureNumber = 1;
+                if (!osmd || !osmd.cursor) return;
+
+                var bpm = +document.getElementById('bpm').value || 100;
+                var beatLen = 60 / bpm;
+
+                try {
+                    osmd.cursor.reset();
+                    var it = osmd.cursor.Iterator;
+                    var lastM = -1;
+                    while (!it.EndReached) {
+                        var mIdx = it.CurrentMeasureIndex;
+                        if (mIdx !== lastM) {
+                            var timeObj = it.currentTimeStamp || it.CurrentTimeStamp;
+                            var real = timeObj ? (typeof timeObj.realValue !== 'undefined' ? timeObj.realValue : (timeObj.RealValue || 0)) : 0;
+                            var measureNumber = mIdx + 1;
+
+                            if (osmd.Sheet && osmd.Sheet.SourceMeasures && osmd.Sheet.SourceMeasures.length > mIdx) {
+                                var srcMeasure = osmd.Sheet.SourceMeasures[mIdx];
+                                if (srcMeasure && srcMeasure.MeasureNumber !== undefined) {
+                                    measureNumber = srcMeasure.MeasureNumber;
+                                }
+                                if (srcMeasure && srcMeasure.multipleRestMeasureNumber > 1) {
+                                    emptyMeasures[mIdx] = true;
+                                } else {
+                                    emptyMeasures[mIdx] = false;
+                                }
+                            }
+
+                            if (rawMeasureTimeMap[measureNumber] === undefined) {
+                                rawMeasureTimeMap[measureNumber] = real * 4 * beatLen;
+                            }
+                            rawMeasureTimeArray.push({ index: mIdx, m: measureNumber, t: real * 4 * beatLen });
+
+                            if (lastM === -1) minMeasureNumber = measureNumber;
+                            maxMeasureNumber = measureNumber;
+                            lastM = mIdx;
+                        }
+                        it.moveToNext();
+                    }
+                    osmd.cursor.reset();
+                    totalMeasures = maxMeasureNumber;
+                } catch (e) {
+                    console.warn('buildRawMeasureTimeMap error:', e);
+                }
+            }
+
+            function extractRawEvents() {
+                rawEvs = [];
+                rawPieceEnd = 0;
+                if (!osmd || !osmd.cursor) return;
+
+                var bpm = +document.getElementById('bpm').value || 100;
+                var beatLen = 60 / bpm;
+                var instIdMap = {};
+
+                if (osmd.Sheet && osmd.Sheet.Instruments) {
+                    for (var m = 0; m < osmd.Sheet.Instruments.length; m++) {
+                        var inst = osmd.Sheet.Instruments[m];
+                        if (inst.Id !== undefined) instIdMap[inst.Id] = m;
+                    }
+                }
+
+                try {
+                    osmd.cursor.reset();
+                    var iterator = osmd.cursor.Iterator;
+                    while (!iterator.EndReached) {
+                        var voices = iterator.CurrentVoiceEntries || [];
+                        var timeObj = iterator.currentTimeStamp || iterator.CurrentTimeStamp;
+                        var real = timeObj ? (typeof timeObj.realValue !== 'undefined' ? timeObj.realValue : (timeObj.RealValue || 0)) : 0;
+                        var tSec = real * 4 * beatLen;
+
+                        for (var i = 0; i < voices.length; i++) {
+                            var ve = voices[i];
+                            if (!ve || !ve.Notes) continue;
+                            var partIdx = 0;
+                            try {
+                                if (ve.ParentVoice && ve.ParentVoice.Parent) {
+                                    var instObj = ve.ParentVoice.Parent;
+                                    if (!instObj.NameLabel && instObj.ParentInstrument) instObj = instObj.ParentInstrument;
+                                    if (instObj && osmd.Sheet.Instruments) {
+                                        var idx = osmd.Sheet.Instruments.indexOf(instObj);
+                                        if (idx < 0 && instObj.Id !== undefined && instIdMap[instObj.Id] !== undefined) idx = instIdMap[instObj.Id];
+                                        if (idx >= 0) partIdx = idx;
+                                    }
+                                }
+                            } catch (e) { }
+
+                            for (var j = 0; j < ve.Notes.length; j++) {
+                                var note = ve.Notes[j];
+                                if (!note || note.isRest()) continue;
+                                if (isTieContinuation(note)) continue;
+
+                                var midi = getMidiPitch(note);
+                                if (midi === null) continue;
+                                var dur = getTiedDuration(note, beatLen);
+
+                                rawEvs.push({ t: tSec, midi: midi, dur: dur, part: partIdx });
+                                if (tSec + dur > rawPieceEnd) rawPieceEnd = tSec + dur;
+                            }
+                        }
+                        iterator.moveToNext();
+                    }
+                    osmd.cursor.reset();
+                    rawEvs.sort(function (a, b) { return a.t - b.t; });
+                } catch (e) {
+                    console.warn('extractRawEvents error:', e);
+                }
+            }
+
             function calculateSkipMap() {
                 skipMeasuresList = [];
                 var skipEnabled = document.getElementById('skipRestsCheck') && document.getElementById('skipRestsCheck').checked;
                 if (!skipEnabled) return;
 
-                for (var i = 0; i < emptyMeasures.length; i++) {
-                    if (emptyMeasures[i]) {
-                        var mStartObj = measureTimeArray.find(function (m) { return m.index === i; });
-                        var mEndObj = measureTimeArray.find(function (m) { return m.index === i + 1; });
-                        var mStart = mStartObj ? mStartObj.t : 0;
-                        var mEnd = mEndObj ? mEndObj.t : (mStartObj ? mStartObj.t + (60 / (+document.getElementById('bpm').value || 100)) * 4 : 0);
-                        if (mStartObj) {
-                            var duration = mEnd - mStart;
-                            if (duration > 0) skipMeasuresList.push({ start: mStart, end: mEnd, duration: duration });
+                if (osmd.Sheet && osmd.Sheet.SourceMeasures) {
+                    for (var i = 0; i < osmd.Sheet.SourceMeasures.length; i++) {
+                        var srcMeasure = osmd.Sheet.SourceMeasures[i];
+                        if (srcMeasure && srcMeasure.multipleRestMeasureNumber > 1) {
+                            var mStartObj = rawMeasureTimeArray.find(function (m) { return m.index === i; });
+                            var mEndObj = rawMeasureTimeArray.find(function (m) { return m.index === i + 1; });
+                            var mStart = mStartObj ? mStartObj.t : 0;
+                            var mEnd = mEndObj ? mEndObj.t : (mStartObj ? mStartObj.t + (60 / (+document.getElementById('bpm').value || 100)) * 4 : 0);
+                            
+                            if (mStartObj) {
+                                var duration = mEnd - mStart;
+                                if (duration > 0) {
+                                    skipMeasuresList.push({ start: mStart, end: mEnd, duration: duration });
+                                }
+                            }
                         }
                     }
                 }
@@ -1614,10 +1816,68 @@
                 var adj = t;
                 for (var i = 0; i < skipMeasuresList.length; i++) {
                     var sm = skipMeasuresList[i];
-                    if (t >= sm.end) adj -= sm.duration;
-                    else if (t > sm.start) adj -= (t - sm.start);
+                    if (t >= sm.end) {
+                        adj -= sm.duration;
+                    } else if (t > sm.start) {
+                        adj -= (t - sm.start);
+                    }
                 }
                 return adj;
+            }
+
+            function applySkipMap() {
+                // Atualizar notas reais
+                evs = [];
+                for (var i = 0; i < rawEvs.length; i++) {
+                    var rev = rawEvs[i];
+                    evs.push({
+                        t: getAdjustedTime(rev.t),
+                        midi: rev.midi,
+                        dur: rev.dur,
+                        part: rev.part
+                    });
+                }
+                evs.sort(function (a, b) { return a.t - b.t; });
+
+                // Atualizar compassos
+                measureTimeMap = {};
+                for (var mNum in rawMeasureTimeMap) {
+                    if (rawMeasureTimeMap.hasOwnProperty(mNum)) {
+                        measureTimeMap[mNum] = getAdjustedTime(rawMeasureTimeMap[mNum]);
+                    }
+                }
+
+                measureTimeArray = [];
+                for (var i = 0; i < rawMeasureTimeArray.length; i++) {
+                    var rmt = rawMeasureTimeArray[i];
+                    measureTimeArray.push({
+                        index: rmt.index,
+                        m: rmt.m,
+                        t: getAdjustedTime(rmt.t)
+                    });
+                }
+
+                pieceEnd = getAdjustedTime(rawPieceEnd);
+
+                var bpm = +document.getElementById('bpm').value || 100;
+                var beatLen = 60 / bpm;
+                var rawAnchor = 0;
+                if (rawMeasureTimeArray.length > 1) {
+                    var firstMeasureDur = rawMeasureTimeArray[1].t;
+                    var isAnacrusis = (Math.abs(firstMeasureDur % beatLen) > 0.01);
+                    rawAnchor = isAnacrusis ? firstMeasureDur : 0;
+                }
+                metronomeAnchorTime = getAdjustedTime(rawAnchor);
+            }
+
+            function updateTimings() {
+                if (!osmd || !osmd.cursor) return;
+                buildRawMeasureTimeMap();
+                extractRawEvents();
+                calculateSkipMap();
+                applySkipMap();
+                extractCursorSteps();
+                updateRangeInputs();
             }
 
             var originalXmlBpm = null;
@@ -1693,7 +1953,9 @@
                 if (activeNotes && activeNotes.length > 0) {
                     activeNotes.forEach(function (noteObj) {
                         var midi = (typeof noteObj === 'object' && noteObj !== null) ? noteObj.midi : noteObj;
-                        var f = getTrumpetFingering(midi);
+                        // Transposição do dedilhado
+                        var fingeringMidi = midi + (globalTranspose + 2);
+                        var f = getTrumpetFingering(fingeringMidi);
                         if (f) {
                             f.forEach(function (v) { pressed[v] = true; });
                         }
@@ -1889,6 +2151,39 @@
                 return { notes: finalNotes, note: displayNote };
             }
 
+            function getTransposedNoteNamePt(step, alter, shift) {
+                if (shift === 0) {
+                    return getNoteNamePt(step, alter);
+                }
+                var map = {
+                    'C': { step: 'D', alter: 0 },
+                    'C♯': { step: 'D', alter: 1 },
+                    'D': { step: 'E', alter: 0 },
+                    'D♯': { step: 'F', alter: 0 },
+                    'D♭': { step: 'E', alter: -1 },
+                    'E': { step: 'F', alter: 1 },
+                    'E♭': { step: 'F', alter: 0 },
+                    'F': { step: 'G', alter: 0 },
+                    'F♯': { step: 'G', alter: 1 },
+                    'G': { step: 'A', alter: 0 },
+                    'G♯': { step: 'A', alter: 1 },
+                    'G♭': { step: 'A', alter: -1 },
+                    'A': { step: 'B', alter: 0 },
+                    'A♯': { step: 'B', alter: 1 },
+                    'A♭': { step: 'B', alter: -1 },
+                    'B': { step: 'C', alter: 1 },
+                    'B♭': { step: 'C', alter: 0 }
+                };
+                var key = step;
+                if (alter >= 0.9) key += '♯';
+                else if (alter <= -0.9) key += '♭';
+                var res = map[key];
+                if (res) {
+                    return getNoteNamePt(res.step, res.alter);
+                }
+                return getNoteNamePt(step, alter);
+            }
+
             function updateNoteDisplay(noteInfo) {
                 var mainEl = document.getElementById('noteDisplayMain');
                 if (!mainEl) return;
@@ -1898,7 +2193,8 @@
                     return;
                 }
                 var n = noteInfo.note;
-                mainEl.textContent = getNoteNamePt(n.step, n.alter);
+                var shift = globalTranspose + 2;
+                mainEl.textContent = getTransposedNoteNamePt(n.step, n.alter, shift);
                 mainEl.classList.add('active');
             }
 
@@ -1909,75 +2205,7 @@
             var minMeasureNumber = 1;
             var maxMeasureNumber = 1;
 
-            function buildMeasureTimeMap() {
-                measureTimeMap = {};
-                measureTimeArray = [];
-                emptyMeasures = [];
-                metronomeAnchorTime = 0;
-                minMeasureNumber = 1;
-                maxMeasureNumber = 1;
-                if (!osmd || !osmd.cursor) return;
-                var bpm = +document.getElementById('bpm').value || 100;
-                var beatLen = 60 / bpm;
-                try {
-                    osmd.cursor.reset();
-                    var it = osmd.cursor.Iterator;
-                    var lastM = -1;
-                    while (!it.EndReached) {
-                        var mIdx = it.CurrentMeasureIndex;
-                        if (mIdx !== lastM) {
-                            var timeObj = it.currentTimeStamp || it.CurrentTimeStamp;
-                            var real = timeObj ? (typeof timeObj.realValue !== 'undefined' ? timeObj.realValue : (timeObj.RealValue || 0)) : 0;
-                            var measureNumber = mIdx + 1;
-                            if (osmd.Sheet && osmd.Sheet.SourceMeasures && osmd.Sheet.SourceMeasures.length > mIdx) {
-                                var srcMeasure = osmd.Sheet.SourceMeasures[mIdx];
-                                if (srcMeasure && srcMeasure.MeasureNumber !== undefined) {
-                                    measureNumber = srcMeasure.MeasureNumber;
-                                }
-                                if (srcMeasure && srcMeasure.multipleRestMeasureNumber > 1) {
-                                    emptyMeasures[mIdx] = true;
-                                } else {
-                                    emptyMeasures[mIdx] = false;
-                                }
-                            }
-                            if (measureTimeMap[measureNumber] === undefined) {
-                                measureTimeMap[measureNumber] = real * 4 * beatLen;
-                            }
-                            measureTimeArray.push({ index: mIdx, m: measureNumber, t: real * 4 * beatLen });
-
-                            if (lastM === -1) minMeasureNumber = measureNumber;
-                            maxMeasureNumber = measureNumber;
-                            lastM = mIdx;
-                        }
-                        it.moveToNext();
-                    }
-                    osmd.cursor.reset();
-
-                    // Define a âncora do metrônomo (o início do primeiro compasso "cheio")
-                    // Se o primeiro compasso for uma anacruse, o segundo compasso (index 1) será a nossa âncora de batida.
-                    if (measureTimeArray.length > 1) {
-                        // Verifica se o primeiro compasso parece ser uma anacruse (tempo de compasso 2 != múltiplo exato de beatLen)
-                        var firstMeasureDur = measureTimeArray[1].t;
-                        var isAnacrusis = (Math.abs(firstMeasureDur % beatLen) > 0.01);
-                        metronomeAnchorTime = isAnacrusis ? firstMeasureDur : 0;
-                    }
-
-                    totalMeasures = maxMeasureNumber;
-
-                    calculateSkipMap();
-                    for (var mNum in measureTimeMap) {
-                        if (measureTimeMap.hasOwnProperty(mNum)) {
-                            measureTimeMap[mNum] = getAdjustedTime(measureTimeMap[mNum]);
-                        }
-                    }
-                    for (var i = 0; i < measureTimeArray.length; i++) {
-                        measureTimeArray[i].t = getAdjustedTime(measureTimeArray[i].t);
-                    }
-                    metronomeAnchorTime = getAdjustedTime(metronomeAnchorTime);
-                } catch (e) {
-                    console.warn('buildMeasureTimeMap error:', e);
-                }
-            }
+            // buildMeasureTimeMap removida (substituída por updateTimings)
 
             function updateRangeInputs() {
                 var fromEl = document.getElementById('rangeFrom');
@@ -2189,9 +2417,19 @@
                 var sBtn = document.getElementById('btnSolo');
                 if (sBtn) sBtn.style.display = (parts.length > 1) ? 'inline-flex' : 'none';
 
+                // Restaurar parte-guia e solo se existirem no EMBEDDED_STATE
+                if (typeof hasState !== 'undefined' && hasState && typeof EMBEDDED_STATE !== 'undefined' && EMBEDDED_STATE !== null) {
+                    if (EMBEDDED_STATE.guidePart !== undefined && EMBEDDED_STATE.guidePart < parts.length) {
+                        if (guideSelect) guideSelect.value = EMBEDDED_STATE.guidePart;
+                    }
+                    if (EMBEDDED_STATE.solo !== undefined) {
+                        soloActive = EMBEDDED_STATE.solo;
+                        var btnSolo = document.getElementById('btnSolo');
+                        if (btnSolo) btnSolo.classList.toggle('active', soloActive);
+                    }
+                }
 
-                buildMeasureTimeMap();
-                updateRangeInputs();
+                updateTimings();
                 document.getElementById('rangeFrom').disabled = false;
                 document.getElementById('rangeTo').disabled = false;
 
@@ -2464,54 +2702,7 @@
                 return null;
             }
 
-            /* ─── Event extraction ───────────────────────────────────────────── */
-            var eventsCache = { bpm: null, evs: [], pieceEnd: 0 };
-
-            function extractEvents() {
-                evs = []; pieceEnd = 0;
-                var bpm = +document.getElementById('bpm').value || 100, beatLen = 60 / bpm;
-                var instIdMap = {};
-                if (osmd.Sheet && osmd.Sheet.Instruments) {
-                    for (var m = 0; m < osmd.Sheet.Instruments.length; m++) {
-                        var inst = osmd.Sheet.Instruments[m];
-                        if (inst.Id !== undefined) instIdMap[inst.Id] = m;
-                    }
-                }
-                osmd.cursor.reset();
-                var iterator = osmd.cursor.Iterator;
-                while (!iterator.EndReached) {
-                    var voices = iterator.CurrentVoiceEntries || [];
-                    var timeObj = iterator.currentTimeStamp || iterator.CurrentTimeStamp;
-                    var real = timeObj ? (typeof timeObj.realValue !== 'undefined' ? timeObj.realValue : (timeObj.RealValue || 0)) : 0;
-                    var tSec = getAdjustedTime(real * 4 * beatLen);
-                    for (var i = 0; i < voices.length; i++) {
-                        var ve = voices[i]; if (!ve || !ve.Notes) continue;
-                        var partIdx = 0;
-                        try {
-                            if (ve.ParentVoice && ve.ParentVoice.Parent) {
-                                var instObj = ve.ParentVoice.Parent;
-                                if (!instObj.NameLabel && instObj.ParentInstrument) instObj = instObj.ParentInstrument;
-                                if (instObj && osmd.Sheet.Instruments) {
-                                    var idx = osmd.Sheet.Instruments.indexOf(instObj);
-                                    if (idx < 0 && instObj.Id !== undefined && instIdMap[instObj.Id] !== undefined) idx = instIdMap[instObj.Id];
-                                    if (idx >= 0) partIdx = idx;
-                                }
-                            }
-                        } catch (e) { }
-                        for (var j = 0; j < ve.Notes.length; j++) {
-                            var note = ve.Notes[j];
-                            if (!note || note.isRest()) continue;
-                            if (isTieContinuation(note)) continue;
-                            var midi = getMidiPitch(note); if (midi === null) continue;
-                            var dur = getTiedDuration(note, beatLen);
-                            evs.push({ t: tSec, midi: midi, dur: dur, part: partIdx });
-                            if (tSec + dur > pieceEnd) pieceEnd = tSec + dur;
-                        }
-                    }
-                    iterator.moveToNext();
-                }
-                evs.sort(function (a, b) { return a.t - b.t; });
-            }
+            // extractEvents removida (substituída por extractRawEvents e applySkipMap)
 
             async function scheduleMetronome(offset) {
                 if (!document.getElementById('metCheck').checked) return;
@@ -2569,7 +2760,6 @@
             }
 
             async function scheduleFrom(offset) {
-                extractEvents();
                 if (!evs.length) { return; }
                 if (ac.state === 'suspended') await ac.resume();
                 updateReverb(); stopScheduled(); clearPlaybackEndTimer();
@@ -2614,35 +2804,38 @@
 
             async function afterXmlLoaded() {
                 originalXmlBpm = extractTempoFromXml(rawXml);
-                if (originalXmlBpm) {
-                    var reduce = document.getElementById('bpmRedCheck').checked;
-                    document.getElementById('bpm').value = reduce ? Math.max(20, originalXmlBpm - 30) : originalXmlBpm;
+                if (!hasState) {
+                    if (originalXmlBpm) {
+                        var reduce = document.getElementById('bpmRedCheck').checked;
+                        document.getElementById('bpm').value = reduce ? Math.max(20, originalXmlBpm - 30) : originalXmlBpm;
+                    }
                 }
 
                 await osmd.load(rawXml);
 
                 // Ajuste de zoom proporcional para mobile no carregamento inicial
                 var zoomEl = document.getElementById('zoomInp');
-                if (window.innerWidth < 768 && zoomEl.value == "100") {
-                    zoomEl.value = "50";
+                if (!hasState) {
+                    if (window.innerWidth < 768 && zoomEl.value == "100") {
+                        zoomEl.value = "50";
+                    }
                 }
                 osmd.Zoom = (+zoomEl.value || 100) / 100;
 
                 osmd.render();
                 buildXmlNoteMap(rawXml); // Parser manual MusicXML — constrói mapa de notas do Staff 1
 
-                resetCursorToStart(); extractCursorSteps();
+                resetCursorToStart();
                 if (ac && ac.state !== 'closed') { try { await ac.close(); } catch (_) { } }
                 ac = new (window.AudioContext || window.webkitAudioContext)();
                 setupFx(); initParts();
-                buildMeasureTimeMap();
-                updateRangeInputs();
-                sat = 0; pat = 0; run = false; evs = []; sc = []; pieceEnd = 0;
+                sat = 0; pat = 0; run = false; sc = [];
                 clearPlaybackEndTimer();
                 ['bp', 'reverbAmt', 'rangeFrom', 'rangeTo', 'countInSelect', 'loopCheck', 'btnExport'].forEach(function (id) {
                     var el = document.getElementById(id);
                     if (el) el.disabled = false;
                 });
+                hasState = false;
             }
 
             document.getElementById('fi').onchange = async function (e) {
@@ -2771,9 +2964,6 @@
                 select.dispatchEvent(new Event('change'));
             };
 
-            // Captura o código fonte inicial para exportação (pode falhar em file://)
-            fetch(window.location.href).then(function (r) { return r.text(); }).then(function (t) { appSource = t; }).catch(function () { });
-
             function exportHtml() {
                 if (!rawXml) return;
 
@@ -2804,30 +2994,52 @@
                 var origNumbers = document.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
                 var cloneNumbers = docClone.querySelectorAll('input[type="number"], input[type="text"], input[type="range"]');
                 for (var i = 0; i < origNumbers.length; i++) {
-                    if (origNumbers[i].id === 'btDelaySlider') {
-                        cloneNumbers[i].setAttribute('value', '0');
-                    } else {
-                        cloneNumbers[i].setAttribute('value', origNumbers[i].value);
+                    cloneNumbers[i].setAttribute('value', origNumbers[i].value);
+                }
+
+                var stateObj = {
+                    bpm: +document.getElementById('bpm').value || 100,
+                    reduce30: document.getElementById('bpmRedCheck').checked,
+                    countIn: parseInt(document.getElementById('countInSelect').value) || 0,
+                    metronome: document.getElementById('metCheck').checked,
+                    skipRests: document.getElementById('skipRestsCheck').checked,
+                    loop: document.getElementById('loopCheck').checked,
+                    cursorMode: parseInt(document.getElementById('cursorMode').value),
+                    zoom: parseInt(document.getElementById('zoomInp').value) || 100,
+                    reverb: parseInt(document.getElementById('reverbAmt').value) || 0,
+                    sound: document.getElementById('instSelect').value,
+                    guidePart: parseInt(document.getElementById('guidePartSelect').value) || 0,
+                    solo: soloActive,
+                    btDelayMs: btDelayMs,
+                    trumpetKey: globalTranspose
+                };
+
+                // Substitui EMBEDDED_XML e EMBEDDED_STATE no script clonado
+                var scripts = docClone.querySelectorAll('script');
+                for (var i = 0; i < scripts.length; i++) {
+                    var script = scripts[i];
+                    if (script.textContent && script.textContent.indexOf('EMBEDDED_XML') !== -1) {
+                        var code = script.textContent;
+
+                        // Substitui a definição de EMBEDDED_XML
+                        var xmlRegex = /var\s+EMBEDDED_XML\s*=\s*(?:`[\s\S]*?`|"[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|.*?)\s*;/;
+                        var newXmlLine = 'var EMBEDDED_XML = ' + JSON.stringify(rawXml) + ';';
+                        code = code.replace(xmlRegex, newXmlLine);
+
+                        // Substitui a definição de EMBEDDED_STATE
+                        var stateRegex = /var\s+EMBEDDED_STATE\s*=\s*(?:null|\{[\s\S]*?\})\s*;/;
+                        var newStateLine = 'var EMBEDDED_STATE = ' + JSON.stringify(stateObj) + ';';
+                        code = code.replace(stateRegex, newStateLine);
+
+                        script.textContent = code;
+                        break;
                     }
                 }
 
-                var cloneBtVal = docClone.querySelector('#btDelayValue');
-                if (cloneBtVal) cloneBtVal.textContent = '0 ms';
-
                 var source = "<!DOCTYPE html>\n" + docClone.outerHTML;
-
                 var fileName = (document.getElementById('fname').textContent || 'dedo-de-trompetista').replace(/\s+/g, '_') + '.html';
 
-                // Injeta o XML no lugar do placeholder ou no primeiro script
-                var scriptToInject = 'var EMBEDDED_XML = ' + JSON.stringify(rawXml) + ';';
-                var finalHtml = source.replace(/var EMBEDDED_XML = ``; \/\/ @EMBEDDED_XML_PLACEHOLDER@/, scriptToInject);
-
-                // Garantia caso o comentário do placeholder tenha sumido no outerHTML
-                if (finalHtml === source && source.indexOf(scriptToInject) === -1) {
-                    finalHtml = source.replace(/<script>/, '<script>\n' + scriptToInject + '\n');
-                }
-
-                var blob = new Blob([finalHtml], { type: 'text/html' });
+                var blob = new Blob([source], { type: 'text/html' });
                 var link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = fileName;
@@ -2836,14 +3048,27 @@
 
             document.getElementById('btnExport').onclick = exportHtml;
 
+            // Inicializar detecção de estado antes de carregar a partitura
+            var hasState = false;
+            if (typeof EMBEDDED_STATE !== 'undefined' && EMBEDDED_STATE !== null) {
+                hasState = true;
+                restoreState(EMBEDDED_STATE);
+            }
+
             if (EMBEDDED_XML) {
                 rawXml = EMBEDDED_XML;
                 afterXmlLoaded();
             } else {
-                // Tenta carregar partitura inicial de trompete; se não existir, aguarda o usuário carregar uma
-                loadFromUrl('https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-violinista/main/Trompetes/001_1%C2%AAM_ad_Trp.mxl').catch(function () {
-                    // Sem partitura padrão ainda — o usuário pode carregar via arquivo ou HNC
-                });
+                var defaultUrl = 'https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-trompetista/main/Instrumentos-Bb/001_1%C2%AAM_ad.mxl';
+                document.getElementById('fname').textContent = "Carregando padrão...";
+                loadFromUrl(defaultUrl, "001_1ªM_ad");
+
+                var kSel = document.getElementById('keySelect');
+                if (!hasState) {
+                    globalTranspose = -2;
+                    if (kSel) kSel.value = "-2";
+                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
+                }
             }
 
             // Inicia a requisição da lista do Hinário assim que o app carregar
@@ -2896,7 +3121,7 @@
             document.getElementById('bpm').onchange = function () {
                 if (!rawXml) return;
                 if (run) stopPlayback();
-                buildMeasureTimeMap();
+                updateTimings();
             };
 
             var skipCheckEl = document.getElementById('skipRestsCheck');
@@ -2904,7 +3129,7 @@
                 skipCheckEl.onchange = function () {
                     if (!rawXml) return;
                     if (run) stopPlayback();
-                    buildMeasureTimeMap();
+                    updateTimings();
                 };
             }
 
@@ -2992,19 +3217,6 @@
                 var slider = document.getElementById('btDelaySlider');
                 var valueLabel = document.getElementById('btDelayValue');
 
-                function updateSliderTrack() {
-                    var pct = (slider.value / slider.max) * 100;
-                    slider.style.setProperty('--pct', pct + '%');
-                }
-
-                function updateBtButtonColor() {
-                    if (btDelayMs > 0) {
-                        btn.classList.add('active-bt');
-                    } else {
-                        btn.classList.remove('active-bt');
-                    }
-                }
-
                 btn.onclick = function () {
                     var isOpen = panel.classList.toggle('visible');
                     btn.classList.toggle('active', isOpen);
@@ -3013,22 +3225,21 @@
                 slider.oninput = function () {
                     btDelayMs = parseInt(this.value);
                     valueLabel.textContent = btDelayMs + ' ms';
-                    updateSliderTrack();
+                    updateBtSliderTrack();
                     updateBtButtonColor();
                     try { localStorage.setItem('btDelayMs', btDelayMs); } catch (_) { }
                 };
 
-                // Restaurar valor salvo
-                try {
-                    var saved = localStorage.getItem('btDelayMs');
-                    if (saved !== null) {
-                        btDelayMs = parseInt(saved) || 0;
-                        slider.value = btDelayMs;
-                        valueLabel.textContent = btDelayMs + ' ms';
-                    }
-                } catch (_) { }
-                updateSliderTrack();
-                updateBtButtonColor();
+                // Restaurar valor salvo se não houver estado embutido
+                if (!hasState) {
+                    try {
+                        var saved = localStorage.getItem('btDelayMs');
+                        if (saved !== null) {
+                            btDelayMs = parseInt(saved) || 0;
+                        }
+                    } catch (_) { }
+                }
+                updateBtDelayUI();
 
                 // Controle de Afinação (Transposição)
                 var kSel = document.getElementById('keySelect');
@@ -3036,28 +3247,18 @@
                     globalTranspose = parseInt(this.value) || 0;
                     try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
                 };
-                try {
-                    var savedK = localStorage.getItem('trumpetKeyTranspose');
-                    if (savedK !== null) {
-                        globalTranspose = parseInt(savedK);
-                        kSel.value = globalTranspose;
-                    }
-                } catch (_) { }
+                if (!hasState) {
+                    try {
+                        var savedK = localStorage.getItem('trumpetKeyTranspose');
+                        if (savedK !== null) {
+                            globalTranspose = parseInt(savedK);
+                            kSel.value = globalTranspose;
+                        }
+                    } catch (_) { }
+                }
 
                 // Carregar lista de instrumentos do GitHub
                 loadHymnList();
-
-                // Carregar primeira música por padrão (se não houver uma embutida)
-                if (!EMBEDDED_XML) {
-                    var defaultUrl = 'https://raw.githubusercontent.com/GlauberLASantiago/dedo-de-trompetista/main/Instrumentos-Bb/001_1%C2%AAM_ad.mxl';
-                    document.getElementById('fname').textContent = "Carregando padrão...";
-                    loadFromUrl(defaultUrl, "001_1ªM_ad");
-
-                    // Como é da pasta Bb, força afinação Sib
-                    globalTranspose = -2;
-                    if (kSel) kSel.value = "-2";
-                    try { localStorage.setItem('trumpetKeyTranspose', globalTranspose); } catch (_) { }
-                }
             })();
 
 
